@@ -12,7 +12,7 @@ BOARD_WIDTH = FIELDS_X * FIELD_SIZE  # in pixels
 BOARD_HEIGHT = FIELDS_Y * FIELD_SIZE  # in pixels
 SCOREBOARD_HEIGHT = 40  # in pixels
 STATUSBOARD_HEIGHT = 40
-TOTAL_HEIGHT = BOARD_HEIGHT + SCOREBOARD_HEIGHT + STATUSBOARD_HEIGHT
+TOTAL_HEIGHT = BOARD_HEIGHT + 1 + SCOREBOARD_HEIGHT + STATUSBOARD_HEIGHT
 
 # Game Timing Configuration
 PAUSE_TIME_AFTER_COIN_CATCH = 2.0
@@ -22,7 +22,7 @@ MONSTER_MOVE_DELAY = 1  # Seconds between monster moves
 # colors
 
 # Backgrounds
-COLOR_GRID = (30, 40, 80)           # Midnight Blue
+COLOR_GRID = (0, 0, 192)           # Midnight Blue
 COLOR_SCOREBOARD = (45, 60, 110)    # Medium Blue
 COLOR_STATUSBAR = (80, 110, 160)    # Light Blue-Grey
 
@@ -315,11 +315,11 @@ class GameState:
         self.screen.blit(self.grid_surface, (0, 0))
         
         # Draw scoreboard
-        scoreboard_rect = pygame.Rect(0, BOARD_HEIGHT, BOARD_WIDTH, SCOREBOARD_HEIGHT)
+        scoreboard_rect = pygame.Rect(0, BOARD_HEIGHT + 1, BOARD_WIDTH, SCOREBOARD_HEIGHT)
         pygame.draw.rect(self.screen, COLOR_SCOREBOARD, scoreboard_rect)
         
         # Draw statusbar
-        statusbar_rect = pygame.Rect(0, BOARD_HEIGHT + SCOREBOARD_HEIGHT, BOARD_WIDTH, STATUSBOARD_HEIGHT)
+        statusbar_rect = pygame.Rect(0, BOARD_HEIGHT + 1 + SCOREBOARD_HEIGHT, BOARD_WIDTH, STATUSBOARD_HEIGHT)
         pygame.draw.rect(self.screen, COLOR_STATUSBAR, statusbar_rect)
 
         # -- Pause: flip robot vs coin/ghost on top --
