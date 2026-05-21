@@ -23,7 +23,7 @@ ROBOT_FALLBACK = (255, 255, 255)
 COIN_FALLBACK = (0, 255, 0)
 MONSTER_FALLBACK = (0, 0, 0)
 
-def load_and_scale_image(path, field_size):
+def load_and_scale_image(path, field_size) -> pygame.Surface:
     if not os.path.exists(path):
         raise FileNotFoundError(f"Image file not found: {path}")
     image = pygame.image.load(path).convert_alpha()
@@ -101,7 +101,7 @@ class Monster(Entity):
     def __init__(self, image_path: str, x=0, y=0):
         super().__init__(image_path, x, y)
 
-    def get_legal_moves(self, game_state: "GameState"):
+    def get_legal_moves(self, game_state: "GameState") -> list[tuple[int, int]]:
         """Return list of (dx, dy) that are legal moves."""
         moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         legal = []
