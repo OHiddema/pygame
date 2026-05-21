@@ -31,7 +31,9 @@ MAX_MONSTER_PERC = 20
 MAX_MONSTERS = int((FIELDS_X * FIELDS_Y) * MAX_MONSTER_PERC / 100)
 if MAX_MONSTERS < 3: MAX_MONSTERS = 3
 
-# text messages in status bar
+# text messages in status bar, font & font size
+FONT_SIZE = 24
+FONT_NAME = "Arial"
 STATUS_READY = "Ready - Press Arrow Keys to Start"
 STATUS_PLAYING = "Playing - Collect Coins, Avoid Monsters"
 STATUS_GOT_IT = "Got it!"
@@ -165,7 +167,7 @@ class GameState:
 
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
-        self.font = pygame.font.SysFont("Arial", 24)
+        self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self._grid_occupied = {}  # (x, y) -> Entity
 
         self.monster_move_delay = MONSTER_MOVE_DELAY
