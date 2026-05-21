@@ -11,6 +11,8 @@ FIELD_SIZE = 64  # in pixels
 BOARD_WIDTH = FIELDS_X * FIELD_SIZE  # in pixels
 BOARD_HEIGHT = FIELDS_Y * FIELD_SIZE  # in pixels
 SCOREBOARD_HEIGHT = 64  # in pixels
+STATUSBOARD_HEIGHT = 64
+TOTAL_HEIGHT = BOARD_HEIGHT + SCOREBOARD_HEIGHT + STATUSBOARD_HEIGHT
 
 # Game Timing Configuration
 PAUSE_TIME_AFTER_COIN_CATCH = 2.0
@@ -155,24 +157,8 @@ class GameState:
         self.font = pygame.font.SysFont("Arial", 24)
         self._grid_occupied = {}  # (x, y) -> Entity
 
-        self.robot = Robot("robot.png")
-        self.coin = Coin("coin.png")
-        self.monsters: list[Monster] = [Monster("monster.png")]
-        self.setup_entities()  # use the new placement logic
-
-        self.score = 0
-        self.game_over = False
         self.monster_move_delay = MONSTER_MOVE_DELAY
-        self.last_monster_move = time.perf_counter()
-
-        # these properties handle the pause after the robot catches the coin
-        self.pause_state = self.PauseState.NONE
-        self.pause_monster = Monster("monster.png")
         self.pause_time_after_coin_catch = PAUSE_TIME_AFTER_COIN_CATCH
-        self.is_paused = False
-        self.pause_end = 0.0
-        self.pause_toggle = False
-        self.pause_toggle_next = 0.0
         self.pause_toggle_interval = PAUSE_TOGGLE_INTERVAL
 
         # Create a surface for the static grid
@@ -193,6 +179,23 @@ class GameState:
                 (0, FIELD_SIZE * y),
                 (BOARD_WIDTH, FIELD_SIZE * y),
             )        
+
+        self.reset()
+
+    def reset(self):
+        self.robot = Robot("robot.png")
+        self.coin = Coin("coin.png")
+        self.monsters: list[Monster] = [Monster("monster.png")]
+        self.pause_monster = Monster("monster.png")
+        self.score = 0
+        self.game_over = False
+        self.last_monster_move = time.perf_counter()
+        self.pause_state = self.PauseState.NONE
+        self.is_paused = False
+        self.pause_end = 0.0
+        self.pause_toggle = False
+        self.pause_toggle_next = 0.0
+        self.setup_entities()
 
     def _is_occupied(self, x: int, y: int) -> bool:
         return (x, y) in self._grid_occupied
@@ -295,6 +298,12 @@ class GameState:
         text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + SCOREBOARD_HEIGHT // 2)
         self.screen.blit(text_surface, text_rect)
 
+        if self.game_over:
+            text_surface = self.font.render("GAME OVER - Press R to Restart", True, COLOR_LINES)
+            text_rect = text_surface.get_rect()
+            text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + SCOREBOARD_HEIGHT + STATUSBOARD_HEIGHT// 2)
+            self.screen.blit(text_surface, text_rect)
+
     def check_time_to_move_monsters(self):
         now = time.perf_counter()
         if now - self.last_monster_move >= self.monster_move_delay:
@@ -326,7 +335,7 @@ class GameState:
 def main():
 
     pygame.init()
-    screen = pygame.display.set_mode((BOARD_WIDTH, BOARD_HEIGHT + SCOREBOARD_HEIGHT))
+    screen = pygame.display.set_mode((BOARD_WIDTH, TOTAL_HEIGHT))
     pygame.display.set_caption("Collecting Game")
     clock = pygame.time.Clock()
 
@@ -339,6 +348,13 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+
+            # Check for Restart Key (R) ONLY if game is over
+            if state.game_over and event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    print("Restarting game...")
+                    state.reset() # <-- This is the magic line
+                    continue # Skip the rest of the loop for this frame to avoid double-input issues
 
             # if not state.game_over:
             if not state.game_over and not state.is_paused:
