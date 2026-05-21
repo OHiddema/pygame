@@ -175,6 +175,25 @@ class GameState:
         self.pause_toggle_next = 0.0
         self.pause_toggle_interval = PAUSE_TOGGLE_INTERVAL
 
+        # Create a surface for the static grid
+        self.grid_surface = pygame.Surface((BOARD_WIDTH, BOARD_HEIGHT + 1))
+        self.grid_surface.fill(COLOR_BACKGROUND)
+        
+        for x in range(0, FIELDS_X + 1):
+            pygame.draw.line(
+                self.grid_surface,
+                COLOR_LINES,
+                (FIELD_SIZE * x, 0),
+                (FIELD_SIZE * x, BOARD_HEIGHT),
+            )
+        for y in range(0, FIELDS_Y + 1):
+            pygame.draw.line(
+                self.grid_surface,
+                COLOR_LINES,
+                (0, FIELD_SIZE * y),
+                (BOARD_WIDTH, FIELD_SIZE * y),
+            )        
+
     def _is_occupied(self, x: int, y: int) -> bool:
         return (x, y) in self._grid_occupied
 
@@ -242,22 +261,7 @@ class GameState:
 
     def draw(self):
         self.screen.fill(COLOR_BACKGROUND)
-
-        # Draw grid lines
-        for x in range(0, FIELDS_X + 1):
-            pygame.draw.line(
-                self.screen,
-                COLOR_LINES,
-                (FIELD_SIZE * x, 0),
-                (FIELD_SIZE * x, BOARD_HEIGHT),
-            )
-        for y in range(0, FIELDS_Y + 1):
-            pygame.draw.line(
-                self.screen,
-                COLOR_LINES,
-                (0, FIELD_SIZE * y),
-                (BOARD_WIDTH, FIELD_SIZE * y),
-            )
+        self.screen.blit(self.grid_surface, (0, 0))
 
         # -- Pause: flip robot vs coin/ghost on top --
         self.coin.draw(self.screen)
