@@ -26,6 +26,11 @@ ROBOT_FALLBACK = (255, 255, 255)
 COIN_FALLBACK = (0, 255, 0)
 MONSTER_FALLBACK = (0, 0, 0)
 
+# max number of monsters as a percentage of the total number of grid cells
+MAX_MONSTER_PERC = 20
+MAX_MONSTERS = int((FIELDS_X * FIELDS_Y) * MAX_MONSTER_PERC / 100)
+if MAX_MONSTERS < 3: MAX_MONSTERS = 3
+
 # text
 GAME_OVER_MESSAGE = "GAME OVER - Press R to Restart"
 
@@ -252,7 +257,8 @@ class GameState:
             if self.pause_state == self.PauseState.COIN:
                 if now >= self.pause_end:
                     self.is_paused = False
-                    self.monsters.append(Monster("monster.png"))
+                    if len(self.monsters) < MAX_MONSTERS:
+                        self.monsters.append(Monster("monster.png"))
                     self.setup_entities()
             return
 
