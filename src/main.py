@@ -2,6 +2,7 @@ import pygame
 import random
 import time
 import os
+from enum import Enum
 
 # window & grid settings
 FIELDS_X = 10  # number of columns
@@ -143,6 +144,12 @@ class Monster(Entity):
 
 
 class GameState:
+
+    class PauseState(Enum):
+        NONE = 0
+        COIN = 1
+        MONSTER = 2
+
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
         self.font = pygame.font.SysFont("Arial", 24)
@@ -159,7 +166,7 @@ class GameState:
         self.last_monster_move = time.perf_counter()
 
         # these properties handle the pause after the robot catches the coin
-        self.pause_reason = type[Robot]
+        self.pause_state = self.PauseState.NONE
         self.pause_monster = Monster("monster.png")
         self.pause_time_after_coin_catch = PAUSE_TIME_AFTER_COIN_CATCH
         self.is_paused = False
@@ -215,7 +222,7 @@ class GameState:
             if now >= self.pause_toggle_next:
                 self.pause_toggle = not self.pause_toggle
                 self.pause_toggle_next = now + self.pause_toggle_interval
-            if self.pause_reason == type[Coin]:
+            if self.pause_state == self.PauseState.COIN:
                 if now >= self.pause_end:
                     self.is_paused = False
                     self.monsters.append(Monster("monster.png"))
@@ -255,7 +262,7 @@ class GameState:
         # -- Pause: flip robot vs coin/ghost on top --
         self.coin.draw(self.screen)
         if self.is_paused:
-            if self.pause_reason == type[Coin]:
+            if self.pause_state == self.PauseState.COIN:
                 top, bottom = (
                     (self.coin, self.robot)
                     if self.pause_toggle
@@ -263,7 +270,7 @@ class GameState:
                 )
                 top.draw(self.screen)
                 bottom.draw(self.screen)
-            elif self.pause_reason == type[Monster]:
+            elif self.pause_state == self.PauseState.MONSTER:
                 top, bottom = (
                     (self.pause_monster, self.robot)
                     if self.pause_toggle
@@ -275,7 +282,7 @@ class GameState:
             self.robot.draw(self.screen)
 
         for m in self.monsters:
-            if not (self.pause_reason == type[Monster] and self.pause_monster == m):
+            if not (self.pause_state == self.PauseState.MONSTER and self.pause_monster == m):
                 m.draw(self.screen)
 
         # Draw score, centered in the scoreboard
@@ -299,7 +306,7 @@ class GameState:
             self.robot.reset_first_move_flag()
 
             self.is_paused = True
-            self.pause_reason = type[Coin]
+            self.pause_state = self.PauseState.COIN
             self.pause_end = time.perf_counter() + self.pause_time_after_coin_catch
 
     def check_monster_collisions(self):
@@ -307,7 +314,7 @@ class GameState:
             if self.robot.x == m.x and self.robot.y == m.y:
                 self.game_over = True
                 self.is_paused = True
-                self.pause_reason = type[Monster]
+                self.pause_state = self.PauseState.MONSTER
                 self.pause_monster = m
                 return
 
