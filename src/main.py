@@ -1,6 +1,7 @@
 import pygame
 import random
 import time
+import os
 
 # window & grid settings
 FIELDS_X = 10  # number of columns
@@ -13,9 +14,13 @@ SCOREBOARD_HEIGHT = 64  # in pixels
 # colors
 COLOR_BACKGROUND = (0, 0, 255)
 COLOR_LINES = (255, 255, 255)
-
+ROBOT_FALLBACK = (255, 255, 255)
+COIN_FALLBACK = (0, 255, 0)
+MONSTER_FALLBACK = (0, 0, 0)
 
 def load_and_scale_image(path, field_size):
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Image file not found: {path}")
     image = pygame.image.load(path).convert_alpha()
     w, h = image.get_size()
     scale = min(field_size / w, field_size / h)
@@ -29,7 +34,20 @@ class Entity:
     def __init__(self, image_path: str, x: int, y: int):
         self.x = x
         self.y = y
-        self.image = load_and_scale_image(image_path, FIELD_SIZE)
+
+        # fallback to colored boxes when image files could not be loaded
+        try:
+            self.image = load_and_scale_image(image_path, FIELD_SIZE)
+        except FileNotFoundError as e:
+            print(f"CRITICAL ERROR: Could not load image for Entity at ({x}, {y}). Reason: {e}")
+            self.image = pygame.Surface((FIELD_SIZE, FIELD_SIZE))
+            match self:
+                case Robot():
+                    self.image.fill(ROBOT_FALLBACK)
+                case Coin():
+                    self.image.fill(COIN_FALLBACK)
+                case Monster():
+                    self.image.fill(MONSTER_FALLBACK)
 
     @property  # calculated property, used to center on object horizontally in a field
     def h_offset(self):
