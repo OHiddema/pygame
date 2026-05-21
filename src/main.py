@@ -31,8 +31,12 @@ MAX_MONSTER_PERC = 20
 MAX_MONSTERS = int((FIELDS_X * FIELDS_Y) * MAX_MONSTER_PERC / 100)
 if MAX_MONSTERS < 3: MAX_MONSTERS = 3
 
-# text
-GAME_OVER_MESSAGE = "GAME OVER - Press R to Restart"
+# text messages in status bar
+STATUS_READY = "Ready - Press Arrow Keys to Start"
+STATUS_PLAYING = "Playing - Collect Coins, Avoid Monsters"
+STATUS_GOT_IT = "Got it!"
+STATUS_GAME_OVER = "GAME OVER - Press R to Restart"
+
 
 def load_and_scale_image(path, field_size) -> pygame.Surface:
     if not os.path.exists(path):
@@ -207,6 +211,25 @@ class GameState:
         self.pause_toggle_next = 0.0
         self.setup_entities()
 
+
+    def get_status_message(self) -> str:
+        # Return the current status message based on game state
+
+        # robot is caught by a monster
+        if self.game_over:
+            return STATUS_GAME_OVER
+        
+        # robot got the coin
+        if self.is_paused and self.pause_state == self.PauseState.COIN:
+            return STATUS_GOT_IT
+        
+        # waiting until robot makes first move
+        if not self.robot.made_first_move:
+            return STATUS_READY
+        
+        return STATUS_PLAYING
+
+
     def _is_occupied(self, x: int, y: int) -> bool:
         return (x, y) in self._grid_occupied
 
@@ -309,11 +332,15 @@ class GameState:
         text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + (SCOREBOARD_HEIGHT // 2))
         self.screen.blit(text_surface, text_rect)
 
-        if self.game_over:
-            text_surface = self.font.render(GAME_OVER_MESSAGE, True, COLOR_LINES)
-            text_rect = text_surface.get_rect()
-            text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + SCOREBOARD_HEIGHT + STATUSBOARD_HEIGHT// 2)
-            self.screen.blit(text_surface, text_rect)
+        # put the appropriate message in the status bar
+        status_text = self.get_status_message()
+        status_surface = self.font.render(status_text, True, COLOR_LINES)
+        status_rect = status_surface.get_rect()
+        status_rect.center = (
+            BOARD_WIDTH // 2,
+            BOARD_HEIGHT + SCOREBOARD_HEIGHT + (STATUSBOARD_HEIGHT // 2)
+        )
+        self.screen.blit(status_surface, status_rect)
 
     def check_time_to_move_monsters(self):
         now = time.perf_counter()
