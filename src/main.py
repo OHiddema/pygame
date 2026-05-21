@@ -10,8 +10,8 @@ FIELDS_Y = 8  # number of rows
 FIELD_SIZE = 64  # in pixels
 BOARD_WIDTH = FIELDS_X * FIELD_SIZE  # in pixels
 BOARD_HEIGHT = FIELDS_Y * FIELD_SIZE  # in pixels
-SCOREBOARD_HEIGHT = 64  # in pixels
-STATUSBOARD_HEIGHT = 64
+SCOREBOARD_HEIGHT = 40  # in pixels
+STATUSBOARD_HEIGHT = 40
 TOTAL_HEIGHT = BOARD_HEIGHT + SCOREBOARD_HEIGHT + STATUSBOARD_HEIGHT
 
 # Game Timing Configuration
@@ -20,10 +20,21 @@ PAUSE_TOGGLE_INTERVAL = 0.2 #Switch between robot and coin/monster on top
 MONSTER_MOVE_DELAY = 1  # Seconds between monster moves
 
 # colors
-COLOR_BACKGROUND = (0, 0, 255)
-COLOR_LINES = (255, 255, 255)
-ROBOT_FALLBACK = (255, 255, 255)
-COIN_FALLBACK = (0, 255, 0)
+
+# Backgrounds
+COLOR_GRID = (30, 40, 80)           # Midnight Blue
+COLOR_SCOREBOARD = (45, 60, 110)    # Medium Blue
+COLOR_STATUSBAR = (80, 110, 160)    # Light Blue-Grey
+
+# Grid Lines
+COLOR_LINES = (180, 190, 220)       # Soft Blue-Grey
+
+# Text
+COLOR_TEXT = (255, 255, 255)
+
+# Fallbacks
+ROBOT_FALLBACK = (128, 128, 128)
+COIN_FALLBACK = (0, 200, 0)
 MONSTER_FALLBACK = (0, 0, 0)
 
 # max number of monsters as a percentage of the total number of grid cells
@@ -32,7 +43,7 @@ MAX_MONSTERS = int((FIELDS_X * FIELDS_Y) * MAX_MONSTER_PERC / 100)
 if MAX_MONSTERS < 3: MAX_MONSTERS = 3
 
 # text messages in status bar, font & font size
-FONT_SIZE = 24
+FONT_SIZE = 20
 FONT_NAME = "Arial"
 STATUS_READY = "Ready - Press Arrow Keys to Start"
 STATUS_PLAYING = "Playing - Collect Coins, Avoid Monsters"
@@ -174,10 +185,10 @@ class GameState:
         self.pause_time_after_coin_catch = PAUSE_TIME_AFTER_COIN_CATCH
         self.pause_toggle_interval = PAUSE_TOGGLE_INTERVAL
 
-        # Create a surface for the static grid
+        # Create grid surface
         self.grid_surface = pygame.Surface((BOARD_WIDTH, BOARD_HEIGHT + 1))
-        self.grid_surface.fill(COLOR_BACKGROUND)
-        
+        self.grid_surface.fill(COLOR_GRID)
+
         for x in range(0, FIELDS_X + 1):
             pygame.draw.line(
                 self.grid_surface,
@@ -299,8 +310,17 @@ class GameState:
             # -------------------------------------------------
 
     def draw(self):
-        self.screen.fill(COLOR_BACKGROUND)
+        # Draw grid area
+        self.screen.fill(COLOR_GRID)
         self.screen.blit(self.grid_surface, (0, 0))
+        
+        # Draw scoreboard
+        scoreboard_rect = pygame.Rect(0, BOARD_HEIGHT, BOARD_WIDTH, SCOREBOARD_HEIGHT)
+        pygame.draw.rect(self.screen, COLOR_SCOREBOARD, scoreboard_rect)
+        
+        # Draw statusbar
+        statusbar_rect = pygame.Rect(0, BOARD_HEIGHT + SCOREBOARD_HEIGHT, BOARD_WIDTH, STATUSBOARD_HEIGHT)
+        pygame.draw.rect(self.screen, COLOR_STATUSBAR, statusbar_rect)
 
         # -- Pause: flip robot vs coin/ghost on top --
         self.coin.draw(self.screen)
@@ -328,15 +348,15 @@ class GameState:
             if not (self.pause_state == self.PauseState.MONSTER and self.pause_monster == m):
                 m.draw(self.screen)
 
-        # Draw score, centered in the scoreboard
-        text_surface = self.font.render(f"Score: {self.score}", True, COLOR_LINES)
+        # Put the score centered in the scoreboard
+        text_surface = self.font.render(f"Score: {self.score}", True, COLOR_TEXT)
         text_rect = text_surface.get_rect()
-        text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + (SCOREBOARD_HEIGHT // 2))
+        text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + SCOREBOARD_HEIGHT // 2)
         self.screen.blit(text_surface, text_rect)
 
-        # put the appropriate message in the status bar
+        # put the appropriate message in the status bar, centered
         status_text = self.get_status_message()
-        status_surface = self.font.render(status_text, True, COLOR_LINES)
+        status_surface = self.font.render(status_text, True, COLOR_TEXT)
         status_rect = status_surface.get_rect()
         status_rect.center = (
             BOARD_WIDTH // 2,
