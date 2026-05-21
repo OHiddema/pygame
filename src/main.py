@@ -11,6 +11,11 @@ BOARD_WIDTH = FIELDS_X * FIELD_SIZE  # in pixels
 BOARD_HEIGHT = FIELDS_Y * FIELD_SIZE  # in pixels
 SCOREBOARD_HEIGHT = 64  # in pixels
 
+# Game Timing Configuration
+PAUSE_TIME_AFTER_COIN_CATCH = 2.0
+PAUSE_TOGGLE_INTERVAL = 0.2 #Switch between robot and coin/monster on top
+MONSTER_MOVE_DELAY = 1  # Seconds between monster moves
+
 # colors
 COLOR_BACKGROUND = (0, 0, 255)
 COLOR_LINES = (255, 255, 255)
@@ -150,18 +155,18 @@ class GameState:
 
         self.score = 0
         self.game_over = False
-        self.monster_move_delay = 1
+        self.monster_move_delay = MONSTER_MOVE_DELAY
         self.last_monster_move = time.perf_counter()
 
         # these properties handle the pause after the robot catches the coin
         self.pause_reason = type[Robot]
         self.pause_monster = Monster("monster.png")
-        self.pause_time_after_coin_catch = 2.0
+        self.pause_time_after_coin_catch = PAUSE_TIME_AFTER_COIN_CATCH
         self.is_paused = False
         self.pause_end = 0.0
         self.pause_toggle = False
         self.pause_toggle_next = 0.0
-        self.pause_toggle_interval = 0.2  # toggle every 0.2 seconds
+        self.pause_toggle_interval = PAUSE_TOGGLE_INTERVAL
 
     def _is_occupied(self, x: int, y: int) -> bool:
         return (x, y) in self._grid_occupied
