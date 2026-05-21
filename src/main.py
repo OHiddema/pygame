@@ -26,6 +26,9 @@ ROBOT_FALLBACK = (255, 255, 255)
 COIN_FALLBACK = (0, 255, 0)
 MONSTER_FALLBACK = (0, 0, 0)
 
+# text
+GAME_OVER_MESSAGE = "GAME OVER - Press R to Restart"
+
 def load_and_scale_image(path, field_size) -> pygame.Surface:
     if not os.path.exists(path):
         raise FileNotFoundError(f"Image file not found: {path}")
@@ -49,13 +52,12 @@ class Entity:
         except FileNotFoundError as e:
             print(f"CRITICAL ERROR: Could not load image for Entity at ({x}, {y}). Reason: {e}")
             self.image = pygame.Surface((FIELD_SIZE, FIELD_SIZE))
-            match self:
-                case Robot():
-                    self.image.fill(ROBOT_FALLBACK)
-                case Coin():
-                    self.image.fill(COIN_FALLBACK)
-                case Monster():
-                    self.image.fill(MONSTER_FALLBACK)
+            if isinstance(self, Robot):
+                self.image.fill(ROBOT_FALLBACK)
+            elif isinstance(self, Coin):
+                self.image.fill(COIN_FALLBACK)
+            elif isinstance(self, Monster):
+                self.image.fill(MONSTER_FALLBACK)
 
     @property  # calculated property, used to center on object horizontally in a field
     def h_offset(self):
@@ -186,7 +188,10 @@ class GameState:
         self.robot = Robot("robot.png")
         self.coin = Coin("coin.png")
         self.monsters: list[Monster] = [Monster("monster.png")]
+
+        # Placeholder monster for Game Over display (will be replaced on collision)
         self.pause_monster = Monster("monster.png")
+
         self.score = 0
         self.game_over = False
         self.last_monster_move = time.perf_counter()
@@ -295,11 +300,11 @@ class GameState:
         # Draw score, centered in the scoreboard
         text_surface = self.font.render(f"Score: {self.score}", True, COLOR_LINES)
         text_rect = text_surface.get_rect()
-        text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + SCOREBOARD_HEIGHT // 2)
+        text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + (SCOREBOARD_HEIGHT // 2))
         self.screen.blit(text_surface, text_rect)
 
         if self.game_over:
-            text_surface = self.font.render("GAME OVER - Press R to Restart", True, COLOR_LINES)
+            text_surface = self.font.render(GAME_OVER_MESSAGE, True, COLOR_LINES)
             text_rect = text_surface.get_rect()
             text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + SCOREBOARD_HEIGHT + STATUSBOARD_HEIGHT// 2)
             self.screen.blit(text_surface, text_rect)
