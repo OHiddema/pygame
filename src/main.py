@@ -176,22 +176,16 @@ class GameState:
         self.grid_surface.fill(COLOR_BCKGRND_GRID)
 
         # vertical lines
-        for x in range(0, COLS + 1):
-            pygame.draw.line(
-                self.grid_surface,
-                COLOR_LINES,
-                (CELL_SIZE * x, 0),
-                (CELL_SIZE * x, GRID_H),
-            )
+        for i in range(0, COLS + 1):
+            a = (CELL_SIZE * i, 0)
+            b = (CELL_SIZE * i, GRID_H)
+            pygame.draw.line(self.grid_surface, COLOR_LINES, a, b)
 
         # horizontal lines
-        for y in range(0, ROWS + 1):
-            pygame.draw.line(
-                self.grid_surface,
-                COLOR_LINES,
-                (0, CELL_SIZE * y),
-                (GRID_W, CELL_SIZE * y),
-            )
+        for i in range(0, ROWS + 1):
+            a = (0, CELL_SIZE * i)
+            b = (GRID_W, CELL_SIZE * i)
+            pygame.draw.line(self.grid_surface, COLOR_LINES, a, b)
 
         self.reset()
 
@@ -297,6 +291,12 @@ class GameState:
             # -------------------------------------------------
 
     def draw(self):
+
+        def centered_text_in_rect(text: str, rect: pygame.Rect):
+            text_surface = self.font.render(text, True, COLOR_TEXT)
+            text_rect = text_surface.get_rect(center=rect.center)
+            self.screen.blit(text_surface, text_rect)
+
         # Draw grid area (grid_surface is already built-up in __init__)
         self.screen.blit(self.grid_surface, (0, 0))
 
@@ -309,16 +309,12 @@ class GameState:
         pygame.draw.rect(self.screen, COLOR_BCKGRND_STATUSBAR, statusbar_rect)
 
         # Put the score-text centered on the scorebar
-        text_string = f"Score: {self.score}"
-        text_surface = self.font.render(text_string, True, COLOR_TEXT)
-        text_rect = text_surface.get_rect(center=scoreboard_rect.center)
-        self.screen.blit(text_surface, text_rect)
+        text = f"Score: {self.score}"
+        centered_text_in_rect(text, scoreboard_rect)
 
         # put the appropriate message centered on the statusbar
-        text_string = self.get_status_message()
-        text_surface = self.font.render(text_string, True, COLOR_TEXT)
-        text_rect = text_surface.get_rect(center=statusbar_rect.center)
-        self.screen.blit(text_surface, text_rect)
+        text = self.get_status_message()
+        centered_text_in_rect(text, statusbar_rect)
 
         # -- Pause: flip robot vs coin/ghost on top --
         self.coin.draw_CC(self.screen)
