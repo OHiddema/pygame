@@ -297,8 +297,7 @@ class GameState:
             # -------------------------------------------------
 
     def draw(self):
-        # Draw grid area
-        self.screen.fill(COLOR_BCKGRND_GRID)
+        # Draw grid area (grid_surface is already built-up in __init__)
         self.screen.blit(self.grid_surface, (0, 0))
 
         # Draw scoreboard
@@ -306,10 +305,20 @@ class GameState:
         pygame.draw.rect(self.screen, COLOR_BCKGRND_SCOREBAR, scoreboard_rect)
 
         # Draw statusbar
-        statusbar_rect = pygame.Rect(
-            0, GRID_H + SCOREBAR_HEIGHT, GRID_W, STATUSBAR_HEIGHT
-        )
+        statusbar_rect = pygame.Rect(0, GRID_H + SCOREBAR_HEIGHT, GRID_W, STATUSBAR_HEIGHT) # fmt: skip
         pygame.draw.rect(self.screen, COLOR_BCKGRND_STATUSBAR, statusbar_rect)
+
+        # Put the score-text centered on the scorebar
+        text_string = f"Score: {self.score}"
+        text_surface = self.font.render(text_string, True, COLOR_TEXT)
+        text_rect = text_surface.get_rect(center=scoreboard_rect.center)
+        self.screen.blit(text_surface, text_rect)
+
+        # put the appropriate message centered on the statusbar
+        text_string = self.get_status_message()
+        text_surface = self.font.render(text_string, True, COLOR_TEXT)
+        text_rect = text_surface.get_rect(center=statusbar_rect.center)
+        self.screen.blit(text_surface, text_rect)
 
         # -- Pause: flip robot vs coin/ghost on top --
         self.coin.draw_CC(self.screen)
@@ -338,22 +347,6 @@ class GameState:
                 self.pause_state == self.PauseState.MONSTER and self.pause_monster == m
             ):
                 m.draw_CC(self.screen)
-
-        # Put the score centered in the scoreboard
-        text_surface = self.font.render(f"Score: {self.score}", True, COLOR_TEXT)
-        text_rect = text_surface.get_rect()
-        text_rect.center = (GRID_W // 2, GRID_H + SCOREBAR_HEIGHT // 2)
-        self.screen.blit(text_surface, text_rect)
-
-        # put the appropriate message in the status bar, centered
-        status_text = self.get_status_message()
-        status_surface = self.font.render(status_text, True, COLOR_TEXT)
-        status_rect = status_surface.get_rect()
-        status_rect.center = (
-            GRID_W // 2,
-            GRID_H + SCOREBAR_HEIGHT + (STATUSBAR_HEIGHT // 2),
-        )
-        self.screen.blit(status_surface, status_rect)
 
     def check_time_to_move_monsters(self):
         now = time.perf_counter()
