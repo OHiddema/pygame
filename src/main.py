@@ -4,43 +4,39 @@ import time
 import os
 from enum import Enum
 
-# window & grid settings
-FIELDS_X = 10  # number of columns
-FIELDS_Y = 8  # number of rows
-FIELD_SIZE = 64  # in pixels
-BOARD_WIDTH = FIELDS_X * FIELD_SIZE  # in pixels
-BOARD_HEIGHT = FIELDS_Y * FIELD_SIZE  # in pixels
-SCOREBOARD_HEIGHT = 40  # in pixels
-STATUSBOARD_HEIGHT = 40
-TOTAL_HEIGHT = BOARD_HEIGHT + 1 + SCOREBOARD_HEIGHT + STATUSBOARD_HEIGHT
+# playing field:
+COLS = 10  # number of columns
+ROWS = 8  # number of rows
+CELL_SIZE = 64  # size of a cell in pixels
+GRID_W = COLS * CELL_SIZE  # total width in pixels
+# total height in pixels, +1 to get the lowest horizontal line visible!
+GRID_H = ROWS * CELL_SIZE + 1
+
+# rest of the screen
+SCOREBAR_HEIGHT = 40  # in pixels
+STATUSBAR_HEIGHT = 40  # in pixels
+TOTAL_HEIGHT = GRID_H + SCOREBAR_HEIGHT + STATUSBAR_HEIGHT
 
 # Game Timing Configuration
 PAUSE_TIME_AFTER_COIN_CATCH = 2.0
-PAUSE_TOGGLE_INTERVAL = 0.2 #Switch between robot and coin/monster on top
+PAUSE_TOGGLE_INTERVAL = 0.2  # Switch between robot and coin/monster on top
 MONSTER_MOVE_DELAY = 1  # Seconds between monster moves
 
 # colors
-
-# Backgrounds
-COLOR_GRID = (0, 0, 192)           # Midnight Blue
-COLOR_SCOREBOARD = (45, 60, 110)    # Medium Blue
-COLOR_STATUSBAR = (80, 110, 160)    # Light Blue-Grey
-
-# Grid Lines
-COLOR_LINES = (180, 190, 220)       # Soft Blue-Grey
-
-# Text
+COLOR_BCKGRND_GRID = (0, 0, 192)
+COLOR_BCKGRND_SCOREBAR = (45, 60, 110)
+COLOR_BCKGRND_STATUSBAR = (80, 110, 160)
+COLOR_LINES = (180, 190, 220)
 COLOR_TEXT = (255, 255, 255)
-
-# Fallbacks
-ROBOT_FALLBACK = (128, 128, 128)
-COIN_FALLBACK = (0, 200, 0)
-MONSTER_FALLBACK = (0, 0, 0)
+COLOR_ROBOT_FALLBACK = (128, 128, 128)
+COLOR_COIN_FALLBACK = (0, 200, 0)
+COLOR_MONSTER_FALLBACK = (0, 0, 0)
 
 # max number of monsters as a percentage of the total number of grid cells
 MAX_MONSTER_PERC = 20
-MAX_MONSTERS = int((FIELDS_X * FIELDS_Y) * MAX_MONSTER_PERC / 100)
-if MAX_MONSTERS < 3: MAX_MONSTERS = 3
+MAX_MONSTERS = int((COLS * ROWS) * MAX_MONSTER_PERC / 100)
+if MAX_MONSTERS < 3:
+    MAX_MONSTERS = 3
 
 # text messages in status bar, font & font size
 FONT_SIZE = 20
@@ -70,28 +66,23 @@ class Entity:
 
         # fallback to colored boxes when image files could not be loaded
         try:
-            self.image = load_and_scale_image(image_path, FIELD_SIZE)
+            self.image = load_and_scale_image(image_path, CELL_SIZE)
         except FileNotFoundError as e:
-            print(f"CRITICAL ERROR: Could not load image for Entity at ({x}, {y}). Reason: {e}")
-            self.image = pygame.Surface((FIELD_SIZE, FIELD_SIZE))
+            print(
+                f"CRITICAL ERROR: Could not load image for Entity at ({x}, {y}). Reason: {e}"
+            )
+            self.image = pygame.Surface((CELL_SIZE, CELL_SIZE))
             if isinstance(self, Robot):
-                self.image.fill(ROBOT_FALLBACK)
+                self.image.fill(COLOR_ROBOT_FALLBACK)
             elif isinstance(self, Coin):
-                self.image.fill(COIN_FALLBACK)
+                self.image.fill(COLOR_COIN_FALLBACK)
             elif isinstance(self, Monster):
-                self.image.fill(MONSTER_FALLBACK)
+                self.image.fill(COLOR_MONSTER_FALLBACK)
 
-    @property  # calculated property, used to center on object horizontally in a field
-    def h_offset(self):
-        return (FIELD_SIZE - self.image.get_width()) // 2
-
-    @property  # calculated property, used to center on object vertically in a field
-    def v_offset(self):
-        return (FIELD_SIZE - self.image.get_height()) // 2
-
-    def draw(self, screen):
-        x = self.x * FIELD_SIZE + self.h_offset
-        y = self.y * FIELD_SIZE + self.v_offset
+    # draw_CC stands for: draw Centred in Cell
+    def draw_CC(self, screen):
+        x = self.x * CELL_SIZE + (CELL_SIZE - self.image.get_width()) // 2
+        y = self.y * CELL_SIZE + (CELL_SIZE - self.image.get_height()) // 2
         screen.blit(self.image, (x, y))
 
 
@@ -104,7 +95,7 @@ class Robot(Entity):
         # Apply move only if within grid
         new_x = self.x + dx
         new_y = self.y + dy
-        if 0 <= new_x < FIELDS_X and 0 <= new_y < FIELDS_Y:
+        if 0 <= new_x < COLS and 0 <= new_y < ROWS:
             self.x = new_x
             self.y = new_y
             self.made_first_move = True
@@ -119,8 +110,8 @@ class Coin(Entity):
         self.spawn_random()
 
     def spawn_random(self):
-        self.x = random.randint(0, FIELDS_X - 1)
-        self.y = random.randint(0, FIELDS_Y - 1)
+        self.x = random.randint(0, COLS - 1)
+        self.y = random.randint(0, ROWS - 1)
 
 
 class Monster(Entity):
@@ -138,7 +129,7 @@ class Monster(Entity):
             new_y = self.y + dy
 
             # 1. Stay in grid
-            if not (0 <= new_x < FIELDS_X and 0 <= new_y < FIELDS_Y):
+            if not (0 <= new_x < COLS and 0 <= new_y < ROWS):
                 continue
 
             # 2. Get what is there
@@ -186,23 +177,26 @@ class GameState:
         self.pause_toggle_interval = PAUSE_TOGGLE_INTERVAL
 
         # Create grid surface
-        self.grid_surface = pygame.Surface((BOARD_WIDTH, BOARD_HEIGHT + 1))
-        self.grid_surface.fill(COLOR_GRID)
+        self.grid_surface = pygame.Surface((GRID_W, GRID_H))
+        self.grid_surface.fill(COLOR_BCKGRND_GRID)
 
-        for x in range(0, FIELDS_X + 1):
+        # vertical lines
+        for x in range(0, COLS + 1):
             pygame.draw.line(
                 self.grid_surface,
                 COLOR_LINES,
-                (FIELD_SIZE * x, 0),
-                (FIELD_SIZE * x, BOARD_HEIGHT),
+                (CELL_SIZE * x, 0),
+                (CELL_SIZE * x, GRID_H),
             )
-        for y in range(0, FIELDS_Y + 1):
+
+        # horizontal lines
+        for y in range(0, ROWS + 1):
             pygame.draw.line(
                 self.grid_surface,
                 COLOR_LINES,
-                (0, FIELD_SIZE * y),
-                (BOARD_WIDTH, FIELD_SIZE * y),
-            )        
+                (0, CELL_SIZE * y),
+                (GRID_W, CELL_SIZE * y),
+            )
 
         self.reset()
 
@@ -224,24 +218,22 @@ class GameState:
         self.pause_toggle_next = 0.0
         self.setup_entities()
 
-
     def get_status_message(self) -> str:
         # Return the current status message based on game state
 
         # robot is caught by a monster
         if self.game_over:
             return STATUS_GAME_OVER
-        
+
         # robot got the coin
         if self.is_paused and self.pause_state == self.PauseState.COIN:
             return STATUS_GOT_IT
-        
+
         # waiting until robot makes first move
         if not self.robot.made_first_move:
             return STATUS_READY
-        
-        return STATUS_PLAYING
 
+        return STATUS_PLAYING
 
     def _is_occupied(self, x: int, y: int) -> bool:
         return (x, y) in self._grid_occupied
@@ -255,8 +247,8 @@ class GameState:
     def _random_free_position(self) -> tuple[int, int]:
         """Return a uniformly random free grid cell."""
         free_cells = []
-        for x in range(FIELDS_X):
-            for y in range(FIELDS_Y):
+        for x in range(COLS):
+            for y in range(ROWS):
                 if not self._is_occupied(x, y):
                     free_cells.append((x, y))
 
@@ -311,19 +303,21 @@ class GameState:
 
     def draw(self):
         # Draw grid area
-        self.screen.fill(COLOR_GRID)
+        self.screen.fill(COLOR_BCKGRND_GRID)
         self.screen.blit(self.grid_surface, (0, 0))
-        
+
         # Draw scoreboard
-        scoreboard_rect = pygame.Rect(0, BOARD_HEIGHT + 1, BOARD_WIDTH, SCOREBOARD_HEIGHT)
-        pygame.draw.rect(self.screen, COLOR_SCOREBOARD, scoreboard_rect)
-        
+        scoreboard_rect = pygame.Rect(0, GRID_H, GRID_W, SCOREBAR_HEIGHT)
+        pygame.draw.rect(self.screen, COLOR_BCKGRND_SCOREBAR, scoreboard_rect)
+
         # Draw statusbar
-        statusbar_rect = pygame.Rect(0, BOARD_HEIGHT + 1 + SCOREBOARD_HEIGHT, BOARD_WIDTH, STATUSBOARD_HEIGHT)
-        pygame.draw.rect(self.screen, COLOR_STATUSBAR, statusbar_rect)
+        statusbar_rect = pygame.Rect(
+            0, GRID_H + SCOREBAR_HEIGHT, GRID_W, STATUSBAR_HEIGHT
+        )
+        pygame.draw.rect(self.screen, COLOR_BCKGRND_STATUSBAR, statusbar_rect)
 
         # -- Pause: flip robot vs coin/ghost on top --
-        self.coin.draw(self.screen)
+        self.coin.draw_CC(self.screen)
         if self.is_paused:
             if self.pause_state == self.PauseState.COIN:
                 top, bottom = (
@@ -331,27 +325,29 @@ class GameState:
                     if self.pause_toggle
                     else (self.robot, self.coin)
                 )
-                top.draw(self.screen)
-                bottom.draw(self.screen)
+                top.draw_CC(self.screen)
+                bottom.draw_CC(self.screen)
             elif self.pause_state == self.PauseState.MONSTER:
                 top, bottom = (
                     (self.pause_monster, self.robot)
                     if self.pause_toggle
                     else (self.robot, self.pause_monster)
                 )
-                top.draw(self.screen)
-                bottom.draw(self.screen)
+                top.draw_CC(self.screen)
+                bottom.draw_CC(self.screen)
         else:
-            self.robot.draw(self.screen)
+            self.robot.draw_CC(self.screen)
 
         for m in self.monsters:
-            if not (self.pause_state == self.PauseState.MONSTER and self.pause_monster == m):
-                m.draw(self.screen)
+            if not (
+                self.pause_state == self.PauseState.MONSTER and self.pause_monster == m
+            ):
+                m.draw_CC(self.screen)
 
         # Put the score centered in the scoreboard
         text_surface = self.font.render(f"Score: {self.score}", True, COLOR_TEXT)
         text_rect = text_surface.get_rect()
-        text_rect.center = (BOARD_WIDTH // 2, BOARD_HEIGHT + SCOREBOARD_HEIGHT // 2)
+        text_rect.center = (GRID_W // 2, GRID_H + SCOREBAR_HEIGHT // 2)
         self.screen.blit(text_surface, text_rect)
 
         # put the appropriate message in the status bar, centered
@@ -359,8 +355,8 @@ class GameState:
         status_surface = self.font.render(status_text, True, COLOR_TEXT)
         status_rect = status_surface.get_rect()
         status_rect.center = (
-            BOARD_WIDTH // 2,
-            BOARD_HEIGHT + SCOREBOARD_HEIGHT + (STATUSBOARD_HEIGHT // 2)
+            GRID_W // 2,
+            GRID_H + SCOREBAR_HEIGHT + (STATUSBAR_HEIGHT // 2),
         )
         self.screen.blit(status_surface, status_rect)
 
@@ -395,7 +391,7 @@ class GameState:
 def main():
 
     pygame.init()
-    screen = pygame.display.set_mode((BOARD_WIDTH, TOTAL_HEIGHT))
+    screen = pygame.display.set_mode((GRID_W, TOTAL_HEIGHT))
     pygame.display.set_caption("Collecting Game")
     clock = pygame.time.Clock()
 
@@ -413,8 +409,8 @@ def main():
             if state.game_over and event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     print("Restarting game...")
-                    state.reset() # <-- This is the magic line
-                    continue # Skip the rest of the loop for this frame to avoid double-input issues
+                    state.reset()  # <-- This is the magic line
+                    continue  # Skip the rest of the loop for this frame to avoid double-input issues
 
             # if not state.game_over:
             if not state.game_over and not state.is_paused:
