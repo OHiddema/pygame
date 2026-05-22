@@ -198,13 +198,8 @@ class GameState:
         self.pause_monster = Monster("monster.png")
 
         self.score = 0
-
-        # self.game_over = False
         self.pause_state = self.PauseState.NONE
-
         self.last_monster_move = time.perf_counter()
-        # self.is_paused = False
-        self.pause_state = self.PauseState.NONE
         self.pause_end = 0.0
         self.pause_toggle = False
         self.pause_toggle_next = 0.0
@@ -214,15 +209,11 @@ class GameState:
         # Return the current status message based on game state
 
         # robot is caught by a monster
-        # if self.game_over:
-        if self.pause_state == self.PauseState.MONSTER:
+        if self.pause_state is self.PauseState.MONSTER:
             return STATUS_GAME_OVER
 
         # robot got the coin
-        # if self.is_paused and self.pause_state == self.PauseState.COIN:
-
-        # ditkanbeter
-        if self.pause_state != self.PauseState.NONE and self.pause_state == self.PauseState.COIN:
+        if self.pause_state is self.PauseState.COIN:
             return STATUS_GOT_IT
 
         # waiting until robot makes first move
@@ -271,17 +262,15 @@ class GameState:
             self._place_at(mx, my, m)
 
     def update(self):
-        # if self.is_paused:
-        if self.pause_state != self.PauseState.NONE:
+        if self.pause_state is not self.PauseState.NONE:
 
             now = time.perf_counter()
             # Toggle coin/monster on top vs robot on top
             if now >= self.pause_toggle_next:
                 self.pause_toggle = not self.pause_toggle
                 self.pause_toggle_next = now + self.pause_toggle_interval
-            if self.pause_state == self.PauseState.COIN:
+            if self.pause_state is self.PauseState.COIN:
                 if now >= self.pause_end:
-                    # self.is_paused = False
                     self.pause_state = self.PauseState.NONE
                     if len(self.monsters) < MAX_MONSTERS:
                         self.monsters.append(Monster("monster.png"))
@@ -289,15 +278,13 @@ class GameState:
             return
 
         # ghosts start moving after first move from robot is made
-        # if not self.game_over and self.robot.made_first_move:
-        if not self.pause_state == self.PauseState.MONSTER and self.robot.made_first_move:
+        if self.pause_state is not self.PauseState.MONSTER and self.robot.made_first_move:
             self.check_coin_collision()
             self.check_monster_collisions()
             # -------------------------------------------------
             # don't perform this check if there was a monster collection
             # otherwise the ghost that collided could move away from the robot again!
-            # if not self.game_over:
-            if not self.pause_state == self.PauseState.MONSTER:
+            if self.pause_state is not self.PauseState.MONSTER:
                 self.check_time_to_move_monsters()
             # -------------------------------------------------
 
@@ -330,9 +317,10 @@ class GameState:
         # -- Pause: flip robot vs coin/ghost on top --
         self.coin.draw_CC(self.screen)
 
-        #ditkanbeter
-        if self.pause_state != self.PauseState.NONE:
-            if self.pause_state == self.PauseState.COIN:
+        match self.pause_state:
+            case self.PauseState.NONE:
+                self.robot.draw_CC(self.screen)
+            case self.PauseState.COIN:
                 top, bottom = (
                     (self.coin, self.robot)
                     if self.pause_toggle
@@ -340,7 +328,7 @@ class GameState:
                 )
                 top.draw_CC(self.screen)
                 bottom.draw_CC(self.screen)
-            elif self.pause_state == self.PauseState.MONSTER:
+            case self.PauseState.MONSTER:
                 top, bottom = (
                     (self.pause_monster, self.robot)
                     if self.pause_toggle
@@ -348,12 +336,10 @@ class GameState:
                 )
                 top.draw_CC(self.screen)
                 bottom.draw_CC(self.screen)
-        else:
-            self.robot.draw_CC(self.screen)
 
         for m in self.monsters:
             if not (
-                self.pause_state == self.PauseState.MONSTER and self.pause_monster == m
+                self.pause_state is self.PauseState.MONSTER and self.pause_monster == m
             ):
                 m.draw_CC(self.screen)
 
@@ -399,14 +385,13 @@ def main():
                 running = False
 
             # Check for Restart Key (R) ONLY if game is over
-            if state.pause_state == state.PauseState.MONSTER and event.type == pygame.KEYDOWN:
+            if state.pause_state is state.PauseState.MONSTER and event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_r:
                     print("Restarting game...")
                     state.reset()  # <-- This is the magic line
                     continue  # Skip the rest of the loop for this frame to avoid double-input issues
 
-            # ditkanbeter
-            if not state.pause_state == state.PauseState.MONSTER and not state.pause_state != state.PauseState.NONE:
+            if state.pause_state is state.PauseState.NONE:
                 if event.type == pygame.KEYDOWN:
                     key = event.key
                     if key == pygame.K_LEFT:
