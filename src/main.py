@@ -107,11 +107,6 @@ class Robot(Entity):
 class Coin(Entity):
     def __init__(self, image_path: str, x=0, y=0):
         super().__init__(image_path, x, y)
-        self.spawn_random()
-
-    def spawn_random(self):
-        self.x = random.randint(0, COLS - 1)
-        self.y = random.randint(0, ROWS - 1)
 
 
 class Monster(Entity):
