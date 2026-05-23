@@ -62,6 +62,10 @@ def load_and_scale_image(path, field_size) -> pygame.Surface:
 
 # Robot, Coin and Monster have common features, so we define a class they can inherit from:
 class Entity:
+
+    # track if we've already warned about missing images
+    warned_missing_images = set()
+
     def __init__(self, image_path: str, x: int, y: int):
         self.x = x
         self.y = y
@@ -69,10 +73,14 @@ class Entity:
         # fallback to colored boxes when image files could not be loaded
         try:
             self.image = load_and_scale_image(image_path, CELL_SIZE)
-        except FileNotFoundError as e:
-            print(
-                f"CRITICAL ERROR: Could not load image for Entity at ({x}, {y}). Reason: {e}"
-            )
+        except FileNotFoundError:
+            filename = os.path.basename(image_path)
+
+            # Only print if we haven't warned about this specific file yet
+            if filename not in Entity.warned_missing_images:
+                print(f"⚠️  Missing file: '{filename}'. Using a colored box instead.")
+                Entity.warned_missing_images.add(filename)
+
             self.image = pygame.Surface((CELL_SIZE, CELL_SIZE))
             if isinstance(self, Robot):
                 self.image.fill(COLOR_ROBOT_FALLBACK)
