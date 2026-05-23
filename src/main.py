@@ -310,7 +310,8 @@ class GameState:
             self._place_at(mx, my, m)
 
     def update(self):
-        if self.pause_state is not self.PauseState.NONE:
+        # if self.pause_state is not self.PauseState.NONE:
+        if self.pause_state in (self.PauseState.COIN, self.PauseState.MONSTER):
 
             now = time.perf_counter()
             # Toggle coin/monster on top vs robot on top
@@ -328,20 +329,12 @@ class GameState:
                     self.setup_entities()
             return
 
-        # ghosts start moving after first move from robot is made
-        if (
-            self.pause_state is not self.PauseState.MONSTER
-            and self.robot.made_first_move
-        ):
+        if self.robot.made_first_move:
             self.check_coin_collision()
-            self.check_monster_collisions()
-            # -------------------------------------------------
-            # don't perform this check if there was a monster collision
-            # otherwise the ghost that collided could move away from the robot again!
-            if self.pause_state is not self.PauseState.MONSTER:
-                self.process_monster_turns()
-                # ^^ this method calls check_monster_collisions() again if there was any movement!!!
-            # -------------------------------------------------
+
+        # check again -> value could be rest by check_coin_collision()
+        if self.robot.made_first_move:
+            self.process_monster_turns()
 
     def draw(self):
 
