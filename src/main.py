@@ -103,14 +103,22 @@ class Robot(Entity):
         super().__init__(image_path, x, y)
         self.made_first_move = False
 
-    def move(self, dx, dy):
+    def move(self, dx, dy, game_state = None) -> bool:
         # Apply move only if within grid
         new_x = self.x + dx
         new_y = self.y + dy
         if 0 <= new_x < COLS and 0 <= new_y < ROWS:
             self.x = new_x
             self.y = new_y
-            self.made_first_move = True
+            # Check if this is the FIRST move
+            if not self.made_first_move:
+                self.made_first_move = True
+                # Trigger the sync immediately!
+                if game_state:
+                    game_state.resync_monsters()
+            
+            return True
+        return False
 
     def reset_first_move_flag(self):
         self.made_first_move = False
@@ -125,6 +133,7 @@ class Monster(Entity):
 
     def __init__(self, image_path: str, x=0, y=0):
         super().__init__(image_path, x, y)
+        self.next_move_time = 0.0
 
     def get_legal_moves(self, game_state: "GameState") -> list[tuple[int, int]]:
         """Return list of (dx, dy) that are legal moves."""
@@ -327,10 +336,11 @@ class GameState:
             self.check_coin_collision()
             self.check_monster_collisions()
             # -------------------------------------------------
-            # don't perform this check if there was a monster collection
+            # don't perform this check if there was a monster collision
             # otherwise the ghost that collided could move away from the robot again!
             if self.pause_state is not self.PauseState.MONSTER:
-                self.check_time_to_move_monsters()
+                self.process_monster_turns()
+                # ^^ this method calls check_monster_collisions() again if there was any movement!!!
             # -------------------------------------------------
 
     def draw(self):
@@ -393,13 +403,41 @@ class GameState:
             ):
                 m.draw_CC(self.screen)
 
-    def check_time_to_move_monsters(self):
+    def resync_monsters(self):
+        """
+        Called exactly when the robot makes its first move.
+        Sets next_move_time for all monsters to be staggered starting from NOW.
+        """
         now = time.perf_counter()
-        if now - self.last_monster_move >= self.monster_move_delay:
-            self.last_monster_move = now
-            for m in self.monsters:
+        num_monsters = len(self.monsters)
+        if num_monsters == 0:
+            return
+
+        interval = self.monster_move_delay / num_monsters
+        for i, m in enumerate(self.monsters):
+            m.next_move_time = now + (i * interval)
+
+    def process_monster_turns(self):
+        now = time.perf_counter()
+        num_monsters = len(self.monsters)
+        
+        if num_monsters == 0:
+            return
+
+        moved_anyone = False
+
+        for m in self.monsters:
+            # Safety: If not synced yet (robot hasn't moved), skip
+            if m.next_move_time == 0.0:
+                continue
+
+            if now >= m.next_move_time:
                 m.move_intelligent(self)
-            # right after the monsters have moved, check if they ran into the robot
+                # Schedule next move relative to NOW
+                m.next_move_time = now + self.monster_move_delay
+                moved_anyone = True
+        
+        if moved_anyone:
             self.check_monster_collisions()
 
     def check_coin_collision(self):
@@ -447,13 +485,13 @@ def main():
                 if state.pause_state is state.PauseState.NONE:
                     key = event.key
                     if key == pygame.K_LEFT:
-                        state.robot.move(-1, 0)
+                        state.robot.move(-1, 0, state)
                     elif key == pygame.K_RIGHT:
-                        state.robot.move(1, 0)
+                        state.robot.move(1, 0, state)
                     elif key == pygame.K_UP:
-                        state.robot.move(0, -1)
+                        state.robot.move(0, -1, state)
                     elif key == pygame.K_DOWN:
-                        state.robot.move(0, 1)
+                        state.robot.move(0, 1, state)
 
         state.update()
         state.draw()
