@@ -348,6 +348,11 @@ class GameState:
                 top.draw_CC(self.screen)
                 bottom.draw_CC(self.screen)
             case self.PauseState.MONSTER:
+
+                overlay = pygame.Surface((GRID_W, GRID_H), pygame.SRCALPHA)
+                overlay.fill((0, 0, 0, 128)) # Black with 50% transparency
+                self.screen.blit(overlay, (0, 0))
+
                 top, bottom = (
                     (self.pause_monster, self.robot)
                     if self.pause_toggle
