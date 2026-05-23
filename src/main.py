@@ -202,7 +202,10 @@ class GameState:
     def reset(self):
         self.robot = Robot("robot.png")
         self.coin = Coin("coin.png")
-        self.monsters: list[Monster] = [Monster("monster.png")]
+        self.monsters: list[Monster] = []
+
+        # Start with 1 monster for easy difficulty
+        self.monsters.append(Monster("monster.png"))
 
         # Placeholder monster for Game Over display (will be replaced on collision)
         self.pause_monster = Monster("monster.png")
@@ -282,8 +285,11 @@ class GameState:
             if self.pause_state is self.PauseState.COIN:
                 if now >= self.pause_end:
                     self.pause_state = self.PauseState.NONE
+
+                    # Increase difficulty: add one monster per round (up to MAX_MONSTERS)
                     if len(self.monsters) < MAX_MONSTERS:
                         self.monsters.append(Monster("monster.png"))
+
                     self.setup_entities()
             return
 
