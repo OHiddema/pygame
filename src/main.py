@@ -4,23 +4,26 @@ import time
 import os
 from enum import Enum
 
-# playing field:
-COLS = 10  # number of columns
-ROWS = 8  # number of rows
-CELL_SIZE = 64  # size of a cell in pixels
-GRID_W = COLS * CELL_SIZE  # total width in pixels
-# total height in pixels, +1 to get the lowest horizontal line visible!
-GRID_H = ROWS * CELL_SIZE + 1
+# --- GAME SETTINGS -----------------------------------------------
+# Grid sizes
+COLS = 10
+ROWS = 8
+CELL_SIZE = 64
 
-# rest of the screen
-SCOREBAR_HEIGHT = 40  # in pixels
-STATUSBAR_HEIGHT = 40  # in pixels
+#bar sizes
+SCOREBAR_HEIGHT = 40
+STATUSBAR_HEIGHT = 40
+
+# Gameplay
+PAUSE_TIME = 2.0                # Pause time [sec] after catching a coin
+MONSTER_SPEED = 1.0             # Time [sec] between monster moves
+PAUSE_TOGGLE_INTERVAL = 0.2     # Switch time [sec] between robot and coin/monster on top
+MAX_MONSTER_PCT = 20            # Max monsters as % of grid
+# -----------------------------------------------------------------
+
+GRID_W = COLS * CELL_SIZE
+GRID_H = ROWS * CELL_SIZE + 1   # +1 to get the lowest horizontal line visible!
 TOTAL_HEIGHT = GRID_H + SCOREBAR_HEIGHT + STATUSBAR_HEIGHT
-
-# Game Timing Configuration
-PAUSE_TIME_AFTER_COIN_CATCH = 2.0
-PAUSE_TOGGLE_INTERVAL = 0.2  # Switch between robot and coin/monster on top
-MONSTER_MOVE_DELAY = 1  # Seconds between monster moves
 
 # colors
 COLOR_BCKGRND_GRID = (0, 0, 192)
@@ -33,8 +36,7 @@ COLOR_COIN_FALLBACK = (0, 200, 0)
 COLOR_MONSTER_FALLBACK = (0, 0, 0)
 
 # max number of monsters as a percentage of the total number of grid cells
-MAX_MONSTER_PERC = 20
-MAX_MONSTERS = int((COLS * ROWS) * MAX_MONSTER_PERC / 100)
+MAX_MONSTERS = int((COLS * ROWS) * MAX_MONSTER_PCT / 100)
 if MAX_MONSTERS < 3:
     MAX_MONSTERS = 3
 
@@ -167,8 +169,8 @@ class GameState:
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self._grid_occupied = {}  # (x, y) -> Entity
 
-        self.monster_move_delay = MONSTER_MOVE_DELAY
-        self.pause_time_after_coin_catch = PAUSE_TIME_AFTER_COIN_CATCH
+        self.monster_move_delay = MONSTER_SPEED
+        self.pause_time_after_coin_catch = PAUSE_TIME
         self.pause_toggle_interval = PAUSE_TOGGLE_INTERVAL
 
         # Create grid surface
