@@ -3,6 +3,7 @@ import random
 import time
 import os
 from enum import Enum
+import random
 
 # --- GAME SETTINGS -----------------------------------------------
 # Grid sizes
@@ -10,19 +11,20 @@ COLS = 10
 ROWS = 8
 CELL_SIZE = 64
 
-#bar sizes
+# bar sizes
 SCOREBAR_HEIGHT = 40
 STATUSBAR_HEIGHT = 40
 
 # Gameplay
-PAUSE_TIME = 2.0                # Pause time [sec] after catching a coin
-MONSTER_SPEED = 1.0             # Time [sec] between monster moves
-PAUSE_TOGGLE_INTERVAL = 0.2     # Switch time [sec] between robot and coin/monster on top
-MAX_MONSTER_PCT = 20            # Max monsters as % of grid
+PAUSE_TIME = 2.0  # Pause time [sec] after catching a coin
+MONSTER_SPEED = 1.0  # Time [sec] between monster moves
+PAUSE_TOGGLE_INTERVAL = 0.2  # Switch time [sec] between robot and coin/monster on top
+MAX_MONSTER_PCT = 20  # Max monsters as % of grid
+MONSTER_IQ = 80  # Percentage of 'intelligent' monster moves
 # -----------------------------------------------------------------
 
 GRID_W = COLS * CELL_SIZE
-GRID_H = ROWS * CELL_SIZE + 1   # +1 to get the lowest horizontal line visible!
+GRID_H = ROWS * CELL_SIZE + 1  # +1 to get the lowest horizontal line visible!
 TOTAL_HEIGHT = GRID_H + SCOREBAR_HEIGHT + STATUSBAR_HEIGHT
 
 # colors
@@ -148,20 +150,44 @@ class Monster(Entity):
 
         return legal
 
-    def move_randomly(self, game_state: "GameState"):
+    def move_intelligent(self, game_state: "GameState"):
         legal = self.get_legal_moves(game_state)
         if not legal:
-            return  # no valid move
+            return
 
-        dx, dy = random.choice(legal)
-        new_x = self.x + dx
-        new_y = self.y + dy
+        # Chance of making a smart move, instead of a totally ranom move
+        is_smart = random.random() < MONSTER_IQ / 100
 
-        # Remove from old position in grid map
+        if is_smart:
+            # --- INTELLIGENT MOVEMENT ---
+            target_x, target_y = game_state.robot.x, game_state.robot.y
+            best_moves = []
+            min_distance = float("inf")
+
+            for dx, dy in legal:
+                new_x = self.x + dx
+                new_y = self.y + dy
+                dist = abs(new_x - target_x) + abs(new_y - target_y)
+
+                if dist < min_distance:
+                    min_distance = dist
+                    best_moves = [(dx, dy)]
+                elif dist == min_distance:
+                    best_moves.append((dx, dy))
+
+            # From all the best moves, randomly pick one
+            dx, dy = random.choice(best_moves)
+
+        else:
+            # --- RANDOM MOVEMENT ---
+            dx, dy = random.choice(legal)
+
+        # Execute the chosen move
         old_pos = (self.x, self.y)
         game_state._grid_occupied.pop(old_pos, None)
 
-        # Move and place in new position (also updates grid occupied)
+        new_x = self.x + dx
+        new_y = self.y + dy
         game_state._place_at(new_x, new_y, self)
 
 
@@ -350,7 +376,7 @@ class GameState:
             case self.PauseState.MONSTER:
 
                 overlay = pygame.Surface((GRID_W, GRID_H), pygame.SRCALPHA)
-                overlay.fill((0, 0, 0, 128)) # Black with 50% transparency
+                overlay.fill((0, 0, 0, 128))  # Black with 50% transparency
                 self.screen.blit(overlay, (0, 0))
 
                 top, bottom = (
@@ -372,7 +398,7 @@ class GameState:
         if now - self.last_monster_move >= self.monster_move_delay:
             self.last_monster_move = now
             for m in self.monsters:
-                m.move_randomly(self)
+                m.move_intelligent(self)
             # right after the monsters have moved, check if they ran into the robot
             self.check_monster_collisions()
 
