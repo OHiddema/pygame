@@ -278,7 +278,10 @@ class GameState:
             return
 
         # ghosts start moving after first move from robot is made
-        if self.pause_state is not self.PauseState.MONSTER and self.robot.made_first_move:
+        if (
+            self.pause_state is not self.PauseState.MONSTER
+            and self.robot.made_first_move
+        ):
             self.check_coin_collision()
             self.check_monster_collisions()
             # -------------------------------------------------
@@ -385,14 +388,16 @@ def main():
                 running = False
 
             # Check for Restart Key (R) ONLY if game is over
-            if state.pause_state is state.PauseState.MONSTER and event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_r:
-                    print("Restarting game...")
-                    state.reset()  # <-- This is the magic line
-                    continue  # Skip the rest of the loop for this frame to avoid double-input issues
+            if event.type == pygame.KEYDOWN:
+                key = event.key
 
-            if state.pause_state is state.PauseState.NONE:
-                if event.type == pygame.KEYDOWN:
+                if state.pause_state is state.PauseState.MONSTER:
+                    if key == pygame.K_r:
+                        print("Restarting game...")
+                        state.reset()
+                        continue
+
+                if state.pause_state is state.PauseState.NONE:
                     key = event.key
                     if key == pygame.K_LEFT:
                         state.robot.move(-1, 0)
