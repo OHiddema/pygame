@@ -103,7 +103,7 @@ class Robot(Entity):
         super().__init__(image_path, x, y)
         self.made_first_move = False
 
-    def move(self, dx, dy, game_state = None) -> bool:
+    def move(self, dx, dy, game_state=None) -> bool:
         # Apply move only if within grid
         new_x = self.x + dx
         new_y = self.y + dy
@@ -116,7 +116,7 @@ class Robot(Entity):
                 # Trigger the sync immediately!
                 if game_state:
                     game_state.resync_monsters()
-            
+
             return True
         return False
 
@@ -408,12 +408,13 @@ class GameState:
 
         interval = self.monster_move_delay / num_monsters
         for i, m in enumerate(self.monsters):
-            m.next_move_time = now + (i * interval)
+            # (i + 1) to not let the first monster move at the exact moment the robot starts moving
+            m.next_move_time = now + ((i + 1) * interval)
 
     def process_monster_turns(self):
         now = time.perf_counter()
         num_monsters = len(self.monsters)
-        
+
         if num_monsters == 0:
             return
 
@@ -429,7 +430,7 @@ class GameState:
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
                 moved_anyone = True
-        
+
         if moved_anyone:
             self.check_monster_collisions()
 
