@@ -4,6 +4,7 @@ import time
 import os
 from enum import Enum
 import random
+from pathlib import Path
 
 # --- GAME SETTINGS -----------------------------------------------
 # Grid sizes
@@ -50,8 +51,8 @@ STATUS_PLAYING = "Playing - Collect Coins, Avoid Monsters"
 STATUS_GOT_IT = "Got it!"
 STATUS_GAME_OVER = "GAME OVER - Press R to Restart"
 
-
 def load_and_scale_image(path, field_size) -> pygame.Surface:
+    path = Path(__file__).resolve().parent / "assets" / path
     if not os.path.exists(path):
         raise FileNotFoundError(f"Image file not found: {path}")
     image = pygame.image.load(path).convert_alpha()
@@ -99,8 +100,10 @@ class Entity:
 
 
 class Robot(Entity):
-    def __init__(self, image_path: str, x=0, y=0):
-        super().__init__(image_path, x, y)
+    filename = "robot.png"
+
+    def __init__(self, x=0, y=0):
+        super().__init__(self.filename, x, y)
         self.made_first_move = False
 
     def move(self, dx, dy, game_state=None) -> bool:
@@ -125,14 +128,17 @@ class Robot(Entity):
 
 
 class Coin(Entity):
-    def __init__(self, image_path: str, x=0, y=0):
-        super().__init__(image_path, x, y)
+    filename = "coin.png"
+
+    def __init__(self, x=0, y=0):
+        super().__init__(self.filename, x, y)
 
 
 class Monster(Entity):
+    filename = "monster.png"
 
-    def __init__(self, image_path: str, x=0, y=0):
-        super().__init__(image_path, x, y)
+    def __init__(self, x=0, y=0):
+        super().__init__(self.filename, x, y)
         self.next_move_time = 0.0
 
     def get_legal_moves(self, game_state: "GameState") -> list[tuple[int, int]]:
@@ -235,15 +241,15 @@ class GameState:
         self.reset()
 
     def reset(self):
-        self.robot = Robot("robot.png")
-        self.coin = Coin("coin.png")
+        self.robot = Robot()
+        self.coin = Coin()
         self.monsters: list[Monster] = []
 
         # Start with 1 monster for easy difficulty
-        self.monsters.append(Monster("monster.png"))
+        self.monsters.append(Monster())
 
         # Placeholder monster for Game Over display (will be replaced on collision)
-        self.pause_monster = Monster("monster.png")
+        self.pause_monster = Monster()
 
         self.score = 0
         self.pause_state = self.PauseState.NONE
@@ -324,7 +330,7 @@ class GameState:
 
                     # Increase difficulty: add one monster per round (up to MAX_MONSTERS)
                     if len(self.monsters) < MAX_MONSTERS:
-                        self.monsters.append(Monster("monster.png"))
+                        self.monsters.append(Monster())
 
                     self.setup_entities()
             return
