@@ -106,7 +106,8 @@ class Robot(Entity):
         super().__init__(self.filename, x, y)
         self.made_first_move = False
 
-    def move(self, dx, dy, game_state=None) -> bool:
+    # return True if the robot made a move AND it was its first move, otherwise return False
+    def move(self, dx, dy) -> bool:
         # Apply move only if within grid
         new_x = self.x + dx
         new_y = self.y + dy
@@ -116,12 +117,11 @@ class Robot(Entity):
             # Check if this is the FIRST move
             if not self.made_first_move:
                 self.made_first_move = True
-                # Trigger the sync immediately!
-                if game_state:
-                    game_state.resync_monsters()
-
-            return True
-        return False
+                return True
+            else:
+                return False
+        else:
+            return False
 
     def reset_first_move_flag(self):
         self.made_first_move = False
@@ -454,6 +454,10 @@ class GameState:
                 self.pause_monster = m
                 return
 
+    def robot_move(self, x: int, y:int):
+        if self.robot.move(x, y):
+            self.resync_monsters()
+
 
 def main():
 
@@ -485,13 +489,13 @@ def main():
                 if state.pause_state is state.PauseState.NONE:
                     key = event.key
                     if key == pygame.K_LEFT:
-                        state.robot.move(-1, 0, state)
+                        state.robot_move(-1, 0)
                     elif key == pygame.K_RIGHT:
-                        state.robot.move(1, 0, state)
+                        state.robot_move(1, 0)
                     elif key == pygame.K_UP:
-                        state.robot.move(0, -1, state)
+                        state.robot_move(0, -1)
                     elif key == pygame.K_DOWN:
-                        state.robot.move(0, 1, state)
+                        state.robot_move(0, 1)
 
         state.update()
         state.draw()
