@@ -76,8 +76,8 @@ class GameState:
 
         return STATUS_PLAYING
 
-    def _is_occupied(self, x: int, y: int) -> bool:
-        return (x, y) in self._grid_occupied
+    # def _is_occupied(self, x: int, y: int) -> bool:
+    #     return (x, y) in self._grid_occupied
 
     def _place_at(self, x: int, y: int, obj: Entity):
         """Place an object at (x,y) and mark the grid cell as occupied."""
@@ -90,7 +90,8 @@ class GameState:
         free_cells = []
         for x in range(COLS):
             for y in range(ROWS):
-                if not self._is_occupied(x, y):
+                if (x,y) not in self._grid_occupied:
+                # if not self._is_occupied(x, y):
                     free_cells.append((x, y))
 
         if not free_cells:
