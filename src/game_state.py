@@ -77,11 +77,8 @@ class GameState:
 
         return STATUS_PLAYING
 
-    # def _is_occupied(self, x: int, y: int) -> bool:
-    #     return (x, y) in self._grid_occupied
-
     def _place_at(self, pos: Position, obj: Entity):
-        """Place an object at (x,y) and mark the grid cell as occupied."""
+        """Place an object at on the grid and mark the grid cell as occupied."""
         obj.pos = pos
         self._grid_occupied[pos] = obj
 
@@ -266,7 +263,7 @@ class GameState:
             self.resync_monsters()
 
     def get_legal_monster_moves(self, m: Monster) -> list[Position]:
-        """Return list of (dx, dy) that are legal moves."""
+        """Return list of delta-moves that are legal moves."""
         moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         legal = []
 
