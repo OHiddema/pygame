@@ -4,6 +4,7 @@ import random
 from enum import Enum
 from settings import *
 from entities import Robot, Coin, Monster, Entity
+from models import Position
 
 
 class GameState:
@@ -234,10 +235,11 @@ class GameState:
 
             if now >= m.next_move_time:
                 legal_moves = self.get_legal_monster_moves(m)
-                the_move = m.move_intelligent(legal_moves, self.robot)
-                if the_move != None:
-                    self._grid_occupied.pop(the_move[0], None)
-                    self._place_at(the_move[1][0], the_move[1][1], m)
+                move_result = m.move_intelligent(legal_moves, Position(self.robot.x, self.robot.y))
+                if move_result:
+                    old_pos, new_pos = move_result
+                    self._grid_occupied.pop(old_pos, None)
+                    self._place_at(new_pos.x, new_pos.y, m)
 
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay

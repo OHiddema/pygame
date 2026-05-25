@@ -3,6 +3,7 @@ import random
 import os
 from pathlib import Path
 from settings import *
+from models import Position
 
 
 def load_and_scale_image(path, field_size) -> pygame.Surface:
@@ -95,7 +96,7 @@ class Monster(Entity):
         super().__init__(self.filename, x, y)
         self.next_move_time = 0.0
 
-    def move_intelligent(self, legal: list[tuple[int, int]], robot: Robot):
+    def move_intelligent(self, legal: list[tuple[int, int]], robot_pos: Position):
         if not legal:  # an empty list evaluates to False
             return
 
@@ -104,14 +105,13 @@ class Monster(Entity):
 
         if is_smart:
             # --- INTELLIGENT MOVEMENT ---
-            target_x, target_y = robot.x, robot.y
+            monster_pos = Position(self.x, self.y)
             best_moves = []
             min_distance = float("inf")
 
             for dx, dy in legal:
-                new_x = self.x + dx
-                new_y = self.y + dy
-                dist = abs(new_x - target_x) + abs(new_y - target_y)
+                candidate = monster_pos + (dx, dy)
+                dist = candidate.distance_to(robot_pos)
 
                 if dist < min_distance:
                     min_distance = dist
@@ -121,13 +121,11 @@ class Monster(Entity):
 
             # From all the best moves, randomly pick one
             dx, dy = random.choice(best_moves)
+            new_pos = monster_pos + (dx, dy)
 
         else:
             # --- RANDOM MOVEMENT ---
             dx, dy = random.choice(legal)
+            new_pos = Position(self.x, self.y) + (dx, dy)
 
-        old_pos = (self.x, self.y)
-        new_x = self.x + dx
-        new_y = self.y + dy
-        new_pos = (new_x, new_y)
-        return (old_pos, new_pos)  # GameState will execute the move!
+        return (Position(self.x, self.y), new_pos)  # GameState will execute the move!
