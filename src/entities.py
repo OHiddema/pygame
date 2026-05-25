@@ -24,9 +24,8 @@ class Entity:
     # track if we've already warned about missing images
     warned_missing_images = set()
 
-    def __init__(self, image_path: str, x: int, y: int):
-        self.x = x
-        self.y = y
+    def __init__(self, image_path: str, pos: Position):
+        self.pos = pos
 
         # fallback to colored boxes when image files could not be loaded
         try:
@@ -49,26 +48,24 @@ class Entity:
 
     # draw_CC stands for: draw Centred in Cell
     def draw_CC(self, screen):
-        x = self.x * CELL_SIZE + (CELL_SIZE - self.image.get_width()) // 2
-        y = self.y * CELL_SIZE + (CELL_SIZE - self.image.get_height()) // 2
+        x = self.pos.x * CELL_SIZE + (CELL_SIZE - self.image.get_width()) // 2
+        y = self.pos.y * CELL_SIZE + (CELL_SIZE - self.image.get_height()) // 2
         screen.blit(self.image, (x, y))
 
 
 class Robot(Entity):
     filename = "robot.png"
 
-    def __init__(self, x=0, y=0):
-        super().__init__(self.filename, x, y)
+    def __init__(self, pos = (0,0)):
+        super().__init__(self.filename, pos)
         self.made_first_move = False
 
     # return True if the robot made a move AND it was its first move, otherwise return False
-    def move(self, dx, dy) -> bool:
+    def move(self, delta: Position) -> bool:
         # Apply move only if within grid
-        new_x = self.x + dx
-        new_y = self.y + dy
-        if 0 <= new_x < COLS and 0 <= new_y < ROWS:
-            self.x = new_x
-            self.y = new_y
+        new_pos = self.pos + delta
+        if 0 <= new_pos.x < COLS and 0 <= new_pos.y < ROWS:
+            self.pos = new_pos
             # Check if this is the FIRST move
             if not self.made_first_move:
                 self.made_first_move = True
@@ -85,18 +82,19 @@ class Robot(Entity):
 class Coin(Entity):
     filename = "coin.png"
 
-    def __init__(self, x=0, y=0):
-        super().__init__(self.filename, x, y)
+    def __init__(self, pos = Position(0,0)):
+        super().__init__(self.filename, pos)
 
 
 class Monster(Entity):
     filename = "monster.png"
 
-    def __init__(self, x=0, y=0):
-        super().__init__(self.filename, x, y)
+    def __init__(self, pos = Position(0,0)):
+        super().__init__(self.filename, pos)
         self.next_move_time = 0.0
 
-    def move_intelligent(self, legal: list[tuple[int, int]], robot_pos: Position):
+    # legal: the actual positions the monster can move to, not the delta's!
+    def move_intelligent(self, legal: list[Position], robot_pos: Position):
         if not legal:  # an empty list evaluates to False
             return
 
@@ -105,27 +103,26 @@ class Monster(Entity):
 
         if is_smart:
             # --- INTELLIGENT MOVEMENT ---
-            monster_pos = Position(self.x, self.y)
             best_moves = []
             min_distance = float("inf")
 
-            for dx, dy in legal:
-                candidate = monster_pos + (dx, dy)
+            for delta in legal:
+                candidate = self.pos + delta
                 dist = candidate.distance_to(robot_pos)
 
                 if dist < min_distance:
                     min_distance = dist
-                    best_moves = [(dx, dy)]
+                    best_moves = [delta]
                 elif dist == min_distance:
-                    best_moves.append((dx, dy))
+                    best_moves.append(delta)
 
             # From all the best moves, randomly pick one
-            dx, dy = random.choice(best_moves)
-            new_pos = monster_pos + (dx, dy)
+            delta = random.choice(best_moves)
+            new_pos = self.pos + delta
 
         else:
             # --- RANDOM MOVEMENT ---
-            dx, dy = random.choice(legal)
-            new_pos = Position(self.x, self.y) + (dx, dy)
+            delta = random.choice(legal)
+            new_pos = self.pos + delta
 
-        return (Position(self.x, self.y), new_pos)  # GameState will execute the move!
+        return (self.pos, new_pos)  # GameState will execute the move!

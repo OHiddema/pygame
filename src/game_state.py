@@ -17,7 +17,7 @@ class GameState:
     def __init__(self, screen: pygame.Surface):
         self.screen = screen
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
-        self._grid_occupied = {}  # (x, y) -> Entity
+        self._grid_occupied: dict[Position, Entity] = {}
 
         self.monster_move_delay = MONSTER_SPEED
         self.pause_time_after_coin_catch = PAUSE_TIME
@@ -80,23 +80,22 @@ class GameState:
     # def _is_occupied(self, x: int, y: int) -> bool:
     #     return (x, y) in self._grid_occupied
 
-    def _place_at(self, x: int, y: int, obj: Entity):
+    def _place_at(self, pos: Position, obj: Entity):
         """Place an object at (x,y) and mark the grid cell as occupied."""
-        obj.x = x
-        obj.y = y
-        self._grid_occupied[(x, y)] = obj
+        obj.pos = pos
+        self._grid_occupied[pos] = obj
 
-    def _random_free_position(self) -> tuple[int, int]:
+    def _random_free_position(self) -> Position:
         """Return a uniformly random free grid cell."""
         free_cells = []
         for x in range(COLS):
             for y in range(ROWS):
-                if (x,y) not in self._grid_occupied:
-                # if not self._is_occupied(x, y):
-                    free_cells.append((x, y))
+                pos = Position(x,y)
+                if pos not in self._grid_occupied:
+                    free_cells.append(pos)
 
         if not free_cells:
-            return 0, 0  # should not happen
+            return Position(0, 0)  # should not happen
 
         return random.choice(free_cells)
 
@@ -105,17 +104,17 @@ class GameState:
         self._grid_occupied.clear()
 
         # 1. Robot
-        rx, ry = self._random_free_position()
-        self._place_at(rx, ry, self.robot)
+        pos_robot = self._random_free_position()
+        self._place_at(pos_robot, self.robot)
 
         # 2. Coin
-        cx, cy = self._random_free_position()
-        self._place_at(cx, cy, self.coin)
+        pos_coin = self._random_free_position()
+        self._place_at(pos_coin, self.coin)
 
         # 3. Monsters
         for m in self.monsters:
-            mx, my = self._random_free_position()
-            self._place_at(mx, my, m)
+            pos_m = self._random_free_position()
+            self._place_at(pos_m, m)
 
     def update(self):
         # if self.pause_state is not self.PauseState.NONE:
@@ -235,11 +234,11 @@ class GameState:
 
             if now >= m.next_move_time:
                 legal_moves = self.get_legal_monster_moves(m)
-                move_result = m.move_intelligent(legal_moves, Position(self.robot.x, self.robot.y))
+                move_result = m.move_intelligent(legal_moves, self.robot.pos)
                 if move_result:
                     old_pos, new_pos = move_result
                     self._grid_occupied.pop(old_pos, None)
-                    self._place_at(new_pos.x, new_pos.y, m)
+                    self._place_at(new_pos, m)
 
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
@@ -249,7 +248,7 @@ class GameState:
             self.check_monster_collisions()
 
     def check_coin_collision(self):
-        if (self.robot.x, self.robot.y) == (self.coin.x, self.coin.y):
+        if self.robot.pos == self.coin.pos:
             self.score += 1
             self.robot.reset_first_move_flag()
             self.pause_state = self.PauseState.COIN
@@ -257,35 +256,34 @@ class GameState:
 
     def check_monster_collisions(self):
         for m in self.monsters:
-            if self.robot.x == m.x and self.robot.y == m.y:
+            if self.robot.pos == m.pos:
                 self.pause_state = self.PauseState.MONSTER
                 self.pause_monster = m
                 return
 
-    def robot_move(self, x: int, y: int):
-        if self.robot.move(x, y):
+    def robot_move(self, delta: Position):
+        if self.robot.move(delta):
             self.resync_monsters()
 
-    def get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
+    def get_legal_monster_moves(self, m: Monster) -> list[Position]:
         """Return list of (dx, dy) that are legal moves."""
         moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         legal = []
 
-        for dx, dy in moves:
-            new_x = m.x + dx
-            new_y = m.y + dy
+        for delta in moves:
+            candidate = m.pos + delta
 
             # 1. Stay in grid
-            if not (0 <= new_x < COLS and 0 <= new_y < ROWS):
+            if not (0 <= candidate.x < COLS and 0 <= candidate.y < ROWS):
                 continue
 
             # 2. Get what is there
-            occupant = self._grid_occupied.get((new_x, new_y))
+            occupant = self._grid_occupied.get(candidate)
 
             # 3. Monsters cannot run into each other or occupy the coin position
             if isinstance(occupant, (Monster, Coin)):
                 continue
 
-            legal.append((dx, dy))
+            legal.append(delta)
 
         return legal
