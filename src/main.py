@@ -51,6 +51,7 @@ STATUS_PLAYING = "Playing - Collect Coins, Avoid Monsters"
 STATUS_GOT_IT = "Got it!"
 STATUS_GAME_OVER = "GAME OVER - Press R to Restart"
 
+
 def load_and_scale_image(path, field_size) -> pygame.Surface:
     path = Path(__file__).resolve().parent / "assets" / path
     if not os.path.exists(path):
@@ -142,7 +143,7 @@ class Monster(Entity):
         self.next_move_time = 0.0
 
     def move_intelligent(self, legal: list[tuple[int, int]], robot: Robot):
-        if not legal:
+        if not legal:  # an empty list evaluates to False
             return
 
         # Chance of making a smart move, instead of a totally ranom move
@@ -176,7 +177,7 @@ class Monster(Entity):
         new_x = self.x + dx
         new_y = self.y + dy
         new_pos = (new_x, new_y)
-        return (old_pos, new_pos)   #GameState will execute the move!
+        return (old_pos, new_pos)  # GameState will execute the move!
 
 
 class GameState:
@@ -410,7 +411,7 @@ class GameState:
                 if the_move != None:
                     self._grid_occupied.pop(the_move[0], None)
                     self._place_at(the_move[1][0], the_move[1][1], m)
-                    
+
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
                 moved_anyone = True
@@ -432,7 +433,7 @@ class GameState:
                 self.pause_monster = m
                 return
 
-    def robot_move(self, x: int, y:int):
+    def robot_move(self, x: int, y: int):
         if self.robot.move(x, y):
             self.resync_monsters()
 
@@ -452,8 +453,8 @@ class GameState:
             # 2. Get what is there
             occupant = self._grid_occupied.get((new_x, new_y))
 
-            # 3. Monster cannot run into each other or occupy the coin position
-            if occupant is not None and isinstance(occupant, (Monster, Coin)):
+            # 3. Monsters cannot run into each other or occupy the coin position
+            if isinstance(occupant, (Monster, Coin)):
                 continue
 
             legal.append((dx, dy))
