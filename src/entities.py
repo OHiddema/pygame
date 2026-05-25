@@ -93,24 +93,18 @@ class Monster(Entity):
         super().__init__(self.filename, pos)
         self.next_move_time = 0.0
 
-    # legal: the actual positions the monster can move to, not the delta's!
-    def move_intelligent(self, legal: list[Position], robot_pos: Position):
-        if not legal:  # an empty list evaluates to False
+    def move_intelligent(self, legal_deltas: list[Position], robot_pos: Position):
+        if not legal_deltas:  # an empty list evaluates to False
             return
 
         # Chance of making a smart move, instead of a totally ranom move
         is_smart = random.random() < MONSTER_IQ / 100
 
         if is_smart:
-            # --- INTELLIGENT MOVEMENT ---
-            distances = [
-                (delta, (self.pos + delta).distance_to(robot_pos)) for delta in legal
-            ]
-            min_distance = min(d for _, d in distances)
-            best_moves = [delta for delta, d in distances if d == min_distance]
+            min_distance = min((self.pos + d).distance_to(robot_pos) for d in legal_deltas)
+            best_moves = [d for d in legal_deltas if (self.pos + d).distance_to(robot_pos) == min_distance]
             new_pos = self.pos + random.choice(best_moves)
         else:
-            # --- RANDOM MOVEMENT ---
-            new_pos = self.pos + random.choice(legal)
+            new_pos = self.pos + random.choice(legal_deltas)            
 
         return (self.pos, new_pos)  # GameState will execute the move!
