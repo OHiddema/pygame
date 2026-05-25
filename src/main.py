@@ -141,32 +141,7 @@ class Monster(Entity):
         super().__init__(self.filename, x, y)
         self.next_move_time = 0.0
 
-    def get_legal_moves(self, game_state: "GameState") -> list[tuple[int, int]]:
-        """Return list of (dx, dy) that are legal moves."""
-        moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        legal = []
-
-        for dx, dy in moves:
-            new_x = self.x + dx
-            new_y = self.y + dy
-
-            # 1. Stay in grid
-            if not (0 <= new_x < COLS and 0 <= new_y < ROWS):
-                continue
-
-            # 2. Get what is there
-            occupant = game_state._grid_occupied.get((new_x, new_y))
-
-            # 3. Monster cannot run into each other or occupy the coin position
-            if occupant is not None and isinstance(occupant, (Monster, Coin)):
-                continue
-
-            legal.append((dx, dy))
-
-        return legal
-
-    def move_intelligent(self, game_state: "GameState"):
-        legal = self.get_legal_moves(game_state)
+    def move_intelligent(self, legal: list[tuple[int, int]], robot: Robot):
         if not legal:
             return
 
@@ -175,7 +150,7 @@ class Monster(Entity):
 
         if is_smart:
             # --- INTELLIGENT MOVEMENT ---
-            target_x, target_y = game_state.robot.x, game_state.robot.y
+            target_x, target_y = robot.x, robot.y
             best_moves = []
             min_distance = float("inf")
 
@@ -197,13 +172,11 @@ class Monster(Entity):
             # --- RANDOM MOVEMENT ---
             dx, dy = random.choice(legal)
 
-        # Execute the chosen move
         old_pos = (self.x, self.y)
-        game_state._grid_occupied.pop(old_pos, None)
-
         new_x = self.x + dx
         new_y = self.y + dy
-        game_state._place_at(new_x, new_y, self)
+        new_pos = (new_x, new_y)
+        return (old_pos, new_pos)   #GameState will execute the move!
 
 
 class GameState:
@@ -432,7 +405,12 @@ class GameState:
                 continue
 
             if now >= m.next_move_time:
-                m.move_intelligent(self)
+                legal_moves = self.get_legal_monster_moves(m)
+                the_move = m.move_intelligent(legal_moves, self.robot)
+                if the_move != None:
+                    self._grid_occupied.pop(the_move[0], None)
+                    self._place_at(the_move[1][0], the_move[1][1], m)
+                    
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
                 moved_anyone = True
@@ -457,6 +435,30 @@ class GameState:
     def robot_move(self, x: int, y:int):
         if self.robot.move(x, y):
             self.resync_monsters()
+
+    def get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
+        """Return list of (dx, dy) that are legal moves."""
+        moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        legal = []
+
+        for dx, dy in moves:
+            new_x = m.x + dx
+            new_y = m.y + dy
+
+            # 1. Stay in grid
+            if not (0 <= new_x < COLS and 0 <= new_y < ROWS):
+                continue
+
+            # 2. Get what is there
+            occupant = self._grid_occupied.get((new_x, new_y))
+
+            # 3. Monster cannot run into each other or occupy the coin position
+            if occupant is not None and isinstance(occupant, (Monster, Coin)):
+                continue
+
+            legal.append((dx, dy))
+
+        return legal
 
 
 def main():
