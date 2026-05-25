@@ -56,7 +56,7 @@ class Entity:
 class Robot(Entity):
     filename = "robot.png"
 
-    def __init__(self, pos = (0,0)):
+    def __init__(self, pos=(0, 0)):
         super().__init__(self.filename, pos)
         self.made_first_move = False
 
@@ -82,14 +82,14 @@ class Robot(Entity):
 class Coin(Entity):
     filename = "coin.png"
 
-    def __init__(self, pos = Position(0,0)):
+    def __init__(self, pos=Position(0, 0)):
         super().__init__(self.filename, pos)
 
 
 class Monster(Entity):
     filename = "monster.png"
 
-    def __init__(self, pos = Position(0,0)):
+    def __init__(self, pos=Position(0, 0)):
         super().__init__(self.filename, pos)
         self.next_move_time = 0.0
 
@@ -103,26 +103,14 @@ class Monster(Entity):
 
         if is_smart:
             # --- INTELLIGENT MOVEMENT ---
-            best_moves = []
-            min_distance = float("inf")
-
-            for delta in legal:
-                candidate = self.pos + delta
-                dist = candidate.distance_to(robot_pos)
-
-                if dist < min_distance:
-                    min_distance = dist
-                    best_moves = [delta]
-                elif dist == min_distance:
-                    best_moves.append(delta)
-
-            # From all the best moves, randomly pick one
-            delta = random.choice(best_moves)
-            new_pos = self.pos + delta
-
+            distances = [
+                (delta, (self.pos + delta).distance_to(robot_pos)) for delta in legal
+            ]
+            min_distance = min(d for _, d in distances)
+            best_moves = [delta for delta, d in distances if d == min_distance]
+            new_pos = self.pos + random.choice(best_moves)
         else:
             # --- RANDOM MOVEMENT ---
-            delta = random.choice(legal)
-            new_pos = self.pos + delta
+            new_pos = self.pos + random.choice(legal)
 
         return (self.pos, new_pos)  # GameState will execute the move!
