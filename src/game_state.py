@@ -88,7 +88,7 @@ class GameState:
         free_cells = []
         for x in range(COLS):
             for y in range(ROWS):
-                pos = Position(x,y)
+                pos = Position(x, y)
                 if pos not in self._grid_occupied:
                     free_cells.append(pos)
 
@@ -150,12 +150,16 @@ class GameState:
         text = self.get_status_message()
         centered_text_in_rect(text, statusbar_rect)
 
-        # -- Pause: flip robot vs coin/ghost on top --
-        self.coin.draw_CC(self.screen)
+        for m in self.monsters:
+            if m != self.pause_monster:
+                m.draw_CC(self.screen)
 
         match self.pause_state:
+
             case self.PauseState.NONE:
+                self.coin.draw_CC(self.screen)
                 self.robot.draw_CC(self.screen)
+
             case self.PauseState.COIN:
                 top, bottom = (
                     (self.coin, self.robot)
@@ -164,12 +168,15 @@ class GameState:
                 )
                 top.draw_CC(self.screen)
                 bottom.draw_CC(self.screen)
+
             case self.PauseState.MONSTER:
 
+                # impose a semi-transparent overlay on the gid in case of 'game over'
                 overlay = pygame.Surface((GRID_W, GRID_H), pygame.SRCALPHA)
-                overlay.fill((0, 0, 0, 128))  # Black with 50% transparency
+                overlay.fill((0, 0, 0, 128))
                 self.screen.blit(overlay, (0, 0))
 
+                self.coin.draw_CC(self.screen)
                 top, bottom = (
                     (self.pause_monster, self.robot)
                     if self.pause_toggle
@@ -177,12 +184,6 @@ class GameState:
                 )
                 top.draw_CC(self.screen)
                 bottom.draw_CC(self.screen)
-
-        for m in self.monsters:
-            if not (
-                self.pause_state is self.PauseState.MONSTER and self.pause_monster == m
-            ):
-                m.draw_CC(self.screen)
 
     def resync_monsters(self):
         """
