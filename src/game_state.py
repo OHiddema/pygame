@@ -71,13 +71,15 @@ class GameState:
             self._place_at(self._random_free_position(), entity)
 
     def get_status_message(self) -> str:
-        if self.pause_state is self.PauseState.MONSTER:
-            return STATUS_GAME_OVER
-        if self.pause_state is self.PauseState.COIN:
-            return STATUS_GOT_IT
-        if self.pause_state is self.PauseState.READY:
-            return STATUS_READY
-        return STATUS_PLAYING
+        match self.pause_state:
+            case self.PauseState.MONSTER:
+                return STATUS_GAME_OVER
+            case self.PauseState.COIN:
+                return STATUS_GOT_IT
+            case self.PauseState.READY:
+                return STATUS_READY
+            case self.PauseState.PLAYING:
+                return STATUS_PLAYING
 
     def _place_at(self, pos: Position, obj: Entity):
         """Place an object at on the grid and mark the grid cell as occupied."""
@@ -99,7 +101,6 @@ class GameState:
         return random.choice(free_cells)
 
     def update(self):
-        # if self.pause_state is not self.PauseState.NONE:
         if self.pause_state in (self.PauseState.COIN, self.PauseState.MONSTER):
 
             now = time.perf_counter()
@@ -244,10 +245,11 @@ class GameState:
                 return
 
     def robot_move(self, delta: Position):
-        before = self.pause_state
+        old_state = self.pause_state
         if self.robot.move(delta):
-            self.pause_state = self.PauseState.PLAYING
-            if self.pause_state is not before:
+            if old_state is not self.PauseState.PLAYING:
+                self.pause_state = self.PauseState.PLAYING
+            # if self.pause_state is not before:
                 self.resync_monsters()
 
     def get_legal_monster_moves(self, m: Monster) -> list[Position]:

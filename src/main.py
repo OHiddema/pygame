@@ -16,12 +16,10 @@ def main():
 
     while running:
 
-        # --- Input handling ---
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
 
-            # Check for Restart Key (R) ONLY if game is over
             if event.type == pygame.KEYDOWN:
                 key = event.key
 

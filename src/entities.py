@@ -61,13 +61,13 @@ class Robot(Entity):
     def __init__(self, pos=(0, 0)):
         super().__init__(self.filename, pos)
 
+    # returns True if robot made a move, otherwise False
     def move(self, delta: Position):
         candidate = self.pos + delta
         if self.grid.is_candidate_within_bounds(candidate):
             self.pos = candidate
             return True
-        else:
-            return False
+        return False
 
 
 class Coin(Entity):
@@ -88,7 +88,7 @@ class Monster(Entity):
         if not legal_deltas:  # an empty list evaluates to False
             return
 
-        # Chance of making a smart move, instead of a totally ranom move
+        # Chance of making a smart move, instead of a totally random move
         is_smart = random.random() < MONSTER_IQ / 100
 
         if is_smart:
