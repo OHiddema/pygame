@@ -23,15 +23,15 @@ def main():
             if event.type == pygame.KEYDOWN:
                 key = event.key
 
-                if state.pause_state is state.PauseState.MONSTER:
+                if state.robot_state is state.RobotState.MONSTER:
                     if key == pygame.K_r:
                         print("Restarting game...")
                         state.reset()
                         continue
 
-                if state.pause_state in (
-                    state.PauseState.READY,
-                    state.PauseState.PLAYING,
+                if state.robot_state in (
+                    state.RobotState.READY,
+                    state.RobotState.PLAYING,
                 ):
                     key = event.key
                     if key == pygame.K_LEFT:
