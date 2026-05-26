@@ -58,7 +58,6 @@ class GameState:
 
         self.score = 0
         self.pause_state = self.PauseState.NONE
-        self.last_monster_move = time.perf_counter()
         self.pause_end = 0.0
         self.pause_toggle = False
         self.pause_toggle_next = 0.0
