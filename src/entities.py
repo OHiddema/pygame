@@ -60,27 +60,14 @@ class Robot(Entity):
 
     def __init__(self, pos=(0, 0)):
         super().__init__(self.filename, pos)
-        self.made_first_move = False
 
-    # return True if the robot made a move AND it was its first move, otherwise return False
-    def move(self, delta: Position) -> bool:
+    def move(self, delta: Position):
         candidate = self.pos + delta
-
-        # Apply move only if within grid
         if self.grid.is_candidate_within_bounds(candidate):
             self.pos = candidate
-
-            # Check if this is the FIRST move
-            if not self.made_first_move:
-                self.made_first_move = True
-                return True
-            else:
-                return False
+            return True
         else:
             return False
-
-    def reset_first_move_flag(self):
-        self.made_first_move = False
 
 
 class Coin(Entity):
@@ -105,10 +92,16 @@ class Monster(Entity):
         is_smart = random.random() < MONSTER_IQ / 100
 
         if is_smart:
-            min_distance = min((self.pos + d).distance_to(robot_pos) for d in legal_deltas)
-            best_moves = [d for d in legal_deltas if (self.pos + d).distance_to(robot_pos) == min_distance]
+            min_distance = min(
+                (self.pos + d).distance_to(robot_pos) for d in legal_deltas
+            )
+            best_moves = [
+                d
+                for d in legal_deltas
+                if (self.pos + d).distance_to(robot_pos) == min_distance
+            ]
             new_pos = self.pos + random.choice(best_moves)
         else:
-            new_pos = self.pos + random.choice(legal_deltas)            
+            new_pos = self.pos + random.choice(legal_deltas)
 
         return (self.pos, new_pos)  # GameState will execute the move!

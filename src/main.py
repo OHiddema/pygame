@@ -31,7 +31,10 @@ def main():
                         state.reset()
                         continue
 
-                if state.pause_state is state.PauseState.NONE:
+                if state.pause_state in (
+                    state.PauseState.READY,
+                    state.PauseState.PLAYING,
+                ):
                     key = event.key
                     if key == pygame.K_LEFT:
                         state.robot_move(Position(-1, 0))

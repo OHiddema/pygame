@@ -11,9 +11,10 @@ from grid import Grid
 class GameState:
 
     class PauseState(Enum):
-        NONE = 0
         COIN = 1
         MONSTER = 2
+        READY = 3
+        PLAYING = 4
 
     def __init__(self, screen: pygame.Surface):
 
@@ -57,7 +58,7 @@ class GameState:
         self.pause_monster = Monster()
 
         self.score = 0
-        self.pause_state = self.PauseState.NONE
+        self.pause_state = self.PauseState.READY
         self.pause_end = 0.0
         self.pause_toggle = False
         self.pause_toggle_next = 0.0
@@ -74,7 +75,7 @@ class GameState:
             return STATUS_GAME_OVER
         if self.pause_state is self.PauseState.COIN:
             return STATUS_GOT_IT
-        if not self.robot.made_first_move:
+        if self.pause_state is self.PauseState.READY:
             return STATUS_READY
         return STATUS_PLAYING
 
@@ -108,7 +109,7 @@ class GameState:
                 self.pause_toggle_next = now + self.pause_toggle_interval
             if self.pause_state is self.PauseState.COIN:
                 if now >= self.pause_end:
-                    self.pause_state = self.PauseState.NONE
+                    self.pause_state = self.PauseState.READY
 
                     # Increase difficulty: add one monster per round (up to MAX_MONSTERS)
                     if len(self.monsters) < MAX_MONSTERS:
@@ -117,11 +118,11 @@ class GameState:
                     self.setup_entities()
             return
 
-        if self.robot.made_first_move:
+        if self.pause_state is self.PauseState.PLAYING:
             self.check_coin_collision()
 
-        # check again -> value could be rest by check_coin_collision()
-        if self.robot.made_first_move:
+        # check again -> value could be reset by check_coin_collision()
+        if self.pause_state is self.PauseState.PLAYING:
             self.process_monster_turns()
 
     def draw(self):
@@ -156,7 +157,7 @@ class GameState:
 
         match self.pause_state:
 
-            case self.PauseState.NONE:
+            case self.PauseState.READY | self.PauseState.PLAYING:
                 self.coin.draw_CC(self.screen)
                 self.robot.draw_CC(self.screen)
 
@@ -232,7 +233,6 @@ class GameState:
     def check_coin_collision(self):
         if self.robot.pos == self.coin.pos:
             self.score += 1
-            self.robot.reset_first_move_flag()
             self.pause_state = self.PauseState.COIN
             self.pause_end = time.perf_counter() + self.pause_time_after_coin_catch
 
@@ -244,8 +244,11 @@ class GameState:
                 return
 
     def robot_move(self, delta: Position):
+        before = self.pause_state
         if self.robot.move(delta):
-            self.resync_monsters()
+            self.pause_state = self.PauseState.PLAYING
+            if self.pause_state is not before:
+                self.resync_monsters()
 
     def get_legal_monster_moves(self, m: Monster) -> list[Position]:
         """Return list of delta-moves that are legal moves."""
