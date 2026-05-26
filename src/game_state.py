@@ -71,20 +71,12 @@ class GameState:
             self._place_at(self._random_free_position(), entity)
 
     def get_status_message(self) -> str:
-        # Return the current status message based on game state
-
-        # robot is caught by a monster
         if self.pause_state is self.PauseState.MONSTER:
             return STATUS_GAME_OVER
-
-        # robot got the coin
         if self.pause_state is self.PauseState.COIN:
             return STATUS_GOT_IT
-
-        # waiting until robot makes first move
         if not self.robot.made_first_move:
             return STATUS_READY
-
         return STATUS_PLAYING
 
     def _place_at(self, pos: Position, obj: Entity):
