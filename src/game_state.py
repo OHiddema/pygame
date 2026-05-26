@@ -5,6 +5,7 @@ from enum import Enum
 from settings import *
 from entities import Robot, Coin, Monster, Entity
 from models import Position
+from grid import Grid
 
 
 class GameState:
@@ -15,6 +16,9 @@ class GameState:
         MONSTER = 2
 
     def __init__(self, screen: pygame.Surface):
+
+        self.grid = Grid()
+
         self.screen = screen
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
         self._grid_occupied: dict[Position, Entity] = {}
@@ -60,6 +64,23 @@ class GameState:
         self.pause_toggle_next = 0.0
         self.setup_entities()
 
+    def setup_entities(self):
+        """Place robot, coin and monsters on distinct free cells."""
+        self._grid_occupied.clear()
+
+        # 1. Robot
+        pos_robot = self._random_free_position()
+        self._place_at(pos_robot, self.robot)
+
+        # 2. Coin
+        pos_coin = self._random_free_position()
+        self._place_at(pos_coin, self.coin)
+
+        # 3. Monsters
+        for m in self.monsters:
+            pos_m = self._random_free_position()
+            self._place_at(pos_m, m)
+
     def get_status_message(self) -> str:
         # Return the current status message based on game state
 
@@ -95,23 +116,6 @@ class GameState:
             return Position(0, 0)  # should not happen
 
         return random.choice(free_cells)
-
-    def setup_entities(self):
-        """Place robot, coin and monsters on distinct free cells."""
-        self._grid_occupied.clear()
-
-        # 1. Robot
-        pos_robot = self._random_free_position()
-        self._place_at(pos_robot, self.robot)
-
-        # 2. Coin
-        pos_coin = self._random_free_position()
-        self._place_at(pos_coin, self.coin)
-
-        # 3. Monsters
-        for m in self.monsters:
-            pos_m = self._random_free_position()
-            self._place_at(pos_m, m)
 
     def update(self):
         # if self.pause_state is not self.PauseState.NONE:
@@ -271,7 +275,7 @@ class GameState:
             candidate = m.pos + delta
 
             # 1. Stay in grid
-            if not (0 <= candidate.x < COLS and 0 <= candidate.y < ROWS):
+            if not self.grid.is_candidate_within_bounds(candidate):
                 continue
 
             # 2. Get what is there

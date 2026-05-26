@@ -4,6 +4,7 @@ import os
 from pathlib import Path
 from settings import *
 from models import Position
+from grid import Grid
 
 
 def load_and_scale_image(path, field_size) -> pygame.Surface:
@@ -26,6 +27,7 @@ class Entity:
 
     def __init__(self, image_path: str, pos: Position):
         self.pos = pos
+        self.grid = Grid()
 
         # fallback to colored boxes when image files could not be loaded
         try:
@@ -62,10 +64,12 @@ class Robot(Entity):
 
     # return True if the robot made a move AND it was its first move, otherwise return False
     def move(self, delta: Position) -> bool:
+        candidate = self.pos + delta
+
         # Apply move only if within grid
-        new_pos = self.pos + delta
-        if 0 <= new_pos.x < COLS and 0 <= new_pos.y < ROWS:
-            self.pos = new_pos
+        if self.grid.is_candidate_within_bounds(candidate):
+            self.pos = candidate
+
             # Check if this is the FIRST move
             if not self.made_first_move:
                 self.made_first_move = True
