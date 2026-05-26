@@ -67,19 +67,8 @@ class GameState:
     def setup_entities(self):
         """Place robot, coin and monsters on distinct free cells."""
         self._grid_occupied.clear()
-
-        # 1. Robot
-        pos_robot = self._random_free_position()
-        self._place_at(pos_robot, self.robot)
-
-        # 2. Coin
-        pos_coin = self._random_free_position()
-        self._place_at(pos_coin, self.coin)
-
-        # 3. Monsters
-        for m in self.monsters:
-            pos_m = self._random_free_position()
-            self._place_at(pos_m, m)
+        for entity in [self.robot, self.coin, *self.monsters]:
+            self._place_at(self._random_free_position(), entity)
 
     def get_status_message(self) -> str:
         # Return the current status message based on game state
