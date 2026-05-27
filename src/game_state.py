@@ -268,6 +268,7 @@ class GameState:
             if old_state is not self.RobotState.PLAYING:
                 self.robot_state = self.RobotState.PLAYING
                 self.resync_monsters()
+            self.check_monster_collisions()
 
     def get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
         """Return list of delta-moves that are legal moves."""
