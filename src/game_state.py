@@ -259,12 +259,14 @@ class GameState:
                 return
 
     def robot_move(self, delta: tuple[int, int]):
-        old_state = self.robot_state
-        if self.robot.move(delta):
-            if old_state is not self.RobotState.PLAYING:
-                self.robot_state = self.RobotState.PLAYING
-                self.resync_monsters()
-            self.check_monster_collisions()
+        candidate = self.robot.pos + delta
+        if not self.grid.is_candidate_within_bounds(candidate):
+            return
+        self.robot.pos = candidate
+        if self.robot_state is not self.RobotState.PLAYING:
+            self.robot_state = self.RobotState.PLAYING
+            self.resync_monsters()
+        self.check_monster_collisions()
 
     def get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
         """Return list of delta-moves that are legal moves."""

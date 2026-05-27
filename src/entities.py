@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 from settings import *
 from models import Position
-from grid import Grid
 
 
 def load_and_scale_image(path, field_size) -> pygame.Surface:
@@ -27,7 +26,6 @@ class Entity:
 
     def __init__(self, image_path: str, pos: Position):
         self.pos = pos
-        self.grid = Grid()
 
         # fallback to colored boxes when image files could not be loaded
         try:
@@ -60,14 +58,6 @@ class Robot(Entity):
 
     def __init__(self, pos=(0, 0)):
         super().__init__(self.filename, pos)
-
-    # returns True if robot made a move, otherwise False
-    def move(self, delta: tuple[int, int]):
-        candidate = self.pos + delta
-        if self.grid.is_candidate_within_bounds(candidate):
-            self.pos = candidate
-            return True
-        return False
 
 
 class Coin(Entity):
