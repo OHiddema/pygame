@@ -231,13 +231,13 @@ class GameState:
                 legal_moves = self.get_legal_monster_moves(m)
                 move_result = m.move_intelligent(legal_moves, self.robot.pos)
                 if move_result:
+                    moved_anyone = True
                     old_pos, new_pos = move_result
                     self._grid_occupied.pop(old_pos, None)
                     self._place_at(new_pos, m)
 
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
-                moved_anyone = True
 
         if moved_anyone:
             self.check_monster_collisions()
