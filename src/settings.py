@@ -1,6 +1,6 @@
 # Grid sizes
-COLS = 10
-ROWS = 8
+COLS = 20
+ROWS = 10
 CELL_SIZE = 64
 
 # bar sizes

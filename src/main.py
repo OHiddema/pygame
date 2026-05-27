@@ -1,7 +1,7 @@
 import pygame
 from settings import *
 from game_state import GameState
-from models import Position
+# from models import Position
 
 
 def main():
@@ -25,7 +25,6 @@ def main():
 
                 if state.robot_state is state.RobotState.MONSTER:
                     if key == pygame.K_r:
-                        print("Restarting game...")
                         state.reset()
                         continue
 
@@ -35,13 +34,13 @@ def main():
                 ):
                     key = event.key
                     if key == pygame.K_LEFT:
-                        state.robot_move(Position(-1, 0))
+                        state.robot_move((-1, 0))
                     elif key == pygame.K_RIGHT:
-                        state.robot_move(Position(1, 0))
+                        state.robot_move((1, 0))
                     elif key == pygame.K_UP:
-                        state.robot_move(Position(0, -1))
+                        state.robot_move((0, -1))
                     elif key == pygame.K_DOWN:
-                        state.robot_move(Position(0, 1))
+                        state.robot_move((0, 1))
 
         state.update()
         state.draw()

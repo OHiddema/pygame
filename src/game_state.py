@@ -244,7 +244,7 @@ class GameState:
                 self.pause_monster = m
                 return
 
-    def robot_move(self, delta: Position):
+    def robot_move(self, delta: tuple[int,int]):
         old_state = self.robot_state
         if self.robot.move(delta):
             if old_state is not self.RobotState.PLAYING:
@@ -252,7 +252,7 @@ class GameState:
             # if self.pause_state is not before:
                 self.resync_monsters()
 
-    def get_legal_monster_moves(self, m: Monster) -> list[Position]:
+    def get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
         """Return list of delta-moves that are legal moves."""
         moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         legal = []

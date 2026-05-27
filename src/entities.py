@@ -62,7 +62,7 @@ class Robot(Entity):
         super().__init__(self.filename, pos)
 
     # returns True if robot made a move, otherwise False
-    def move(self, delta: Position):
+    def move(self, delta: tuple[int, int]):
         candidate = self.pos + delta
         if self.grid.is_candidate_within_bounds(candidate):
             self.pos = candidate
@@ -84,7 +84,7 @@ class Monster(Entity):
         super().__init__(self.filename, pos)
         self.next_move_time = 0.0
 
-    def move_intelligent(self, legal_deltas: list[Position], robot_pos: Position):
+    def move_intelligent(self, legal_deltas: list[tuple[int, int]], robot_pos: Position):
         if not legal_deltas:  # an empty list evaluates to False
             return
 
