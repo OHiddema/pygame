@@ -165,38 +165,34 @@ class GameState:
             if m != self.pause_monster:
                 m.draw_CC(self.screen)
 
-        match self.robot_state:
+        if self.robot_state in (self.RobotState.READY, self.RobotState.PLAYING):
+            for c in self.coins:
+                c.draw_CC(self.screen)
+            self.robot.draw_CC(self.screen)
+        
+        elif self.robot_state is self.RobotState.COIN:
+            self._draw_toggle_pair(self.coins[0], self.robot)        
+        
+        elif self.robot_state is self.RobotState.MONSTER:
+            self._draw_overlay()            
+            for c in self.coins:
+                c.draw_CC(self.screen)
+            self._draw_toggle_pair(self.pause_monster, self.robot)
 
-            case self.RobotState.READY | self.RobotState.PLAYING:
-                for c in self.coins:
-                    c.draw_CC(self.screen)
-                self.robot.draw_CC(self.screen)
+    def _draw_toggle_pair(self, top_obj, bottom_obj):
+        top, bottom = (
+            (top_obj, bottom_obj)
+            if self.pause_toggle
+            else (bottom_obj, top_obj)
+        )
+        top.draw_CC(self.screen)
+        bottom.draw_CC(self.screen)
 
-            case self.RobotState.COIN:
-                top, bottom = (
-                    (self.coins[0], self.robot)
-                    if self.pause_toggle
-                    else (self.robot, self.coins[0])
-                )
-                top.draw_CC(self.screen)
-                bottom.draw_CC(self.screen)
-
-            case self.RobotState.MONSTER:
-
-                # impose a semi-transparent overlay on the gid in case of 'game over'
-                overlay = pygame.Surface((GRID_W, GRID_H), pygame.SRCALPHA)
-                overlay.fill((0, 0, 0, 128))
-                self.screen.blit(overlay, (0, 0))
-
-                for c in self.coins:
-                    c.draw_CC(self.screen)
-                top, bottom = (
-                    (self.pause_monster, self.robot)
-                    if self.pause_toggle
-                    else (self.robot, self.pause_monster)
-                )
-                top.draw_CC(self.screen)
-                bottom.draw_CC(self.screen)
+    def _draw_overlay(self):
+        # Semi-transparent overlay for game over
+        overlay = pygame.Surface((GRID_W, GRID_H), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 128))
+        self.screen.blit(overlay, (0, 0))
 
     def resync_monsters(self):
         """
