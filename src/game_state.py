@@ -210,7 +210,7 @@ class GameState:
             if now >= m.next_move_time:
                 has_moved = self.grid.move_monster(m, self.robot.pos)
                 if has_moved:
-                    self.check_monster_robot_collision(m)
+                    self.check_monster_ran_into_robot(m)
 
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
@@ -228,22 +228,18 @@ class GameState:
                     self.coins.remove(c)
                 return
 
-    # since monsters can only make valid moves (e.g. not run into another monster or a coin)
-    # which is checked before a monster moves. with 'get_legal_monster_moves'
-    # a monster-monster or a monster-coin collision is impossible
-    # this means that either the monster moved to an empty field or ran into the robot
-    # on the other hand, the robot has 3 options: coin, monster or empty field
-    def check_monster_robot_collision(self, entity: Robot | Monster):
-        passive = self.grid.occupant_at(entity.pos)
-        if (
-            isinstance(entity, Robot)
-            and isinstance(passive, Monster)
-            or isinstance(entity, Monster)
-            and entity.pos == self.robot.pos
-        ):
-            self.robot_state = self.RobotState.MONSTER
-            self.pause_monster = entity if isinstance(entity, Monster) else passive
-            return
+    def check_monster_ran_into_robot(self, m: Monster):
+        if self.robot.pos == m.pos:
+            self.activate_monster_state(m)
+
+    def check_robot_ran_into_monster(self, r: Robot):
+        occupant = self.grid.occupant_at(r.pos)
+        if isinstance(occupant, Monster):
+            self.activate_monster_state(occupant)
+
+    def activate_monster_state(self, m: Monster):
+        self.robot_state = self.RobotState.MONSTER
+        self.pause_monster = m
 
     def robot_move(self, delta: tuple[int, int]):
         candidate = self.robot.pos + delta
@@ -253,4 +249,4 @@ class GameState:
         if self.robot_state is not self.RobotState.PLAYING:
             self.robot_state = self.RobotState.PLAYING
             self.resync_monsters()
-        self.check_monster_robot_collision(self.robot)
+        self.check_robot_ran_into_monster(self.robot)
