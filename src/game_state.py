@@ -202,8 +202,6 @@ class GameState:
         if num_monsters == 0:
             return
 
-        moved_anyone = False
-
         for m in self.monsters:
             # Safety: If not synced yet (robot hasn't moved), skip
             if m.next_move_time == 0.0:
@@ -212,13 +210,10 @@ class GameState:
             if now >= m.next_move_time:
                 has_moved = self.grid.move_monster(m, self.robot.pos)
                 if has_moved:
-                    moved_anyone = True
+                    self.check_monster_robot_collision(m)
 
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
-
-        if moved_anyone:
-            self.check_monster_collisions()
 
     def check_coin_collision(self):
         for c in self.coins:
@@ -233,12 +228,22 @@ class GameState:
                     self.coins.remove(c)
                 return
 
-    def check_monster_collisions(self):
-        for m in self.monsters:
-            if self.robot.pos == m.pos:
-                self.robot_state = self.RobotState.MONSTER
-                self.pause_monster = m
-                return
+    # since monsters can only make valid moves (e.g. not run into another monster or a coin)
+    # which is checked before a monster moves. with 'get_legal_monster_moves'
+    # a monster-monster or a monster-coin collision is impossible
+    # this means that either the monster moved to an empty field or ran into the robot
+    # on the other hand, the robot has 3 options: coin, monster or empty field
+    def check_monster_robot_collision(self, entity: Robot | Monster):
+        passive = self.grid.occupant_at(entity.pos)
+        if (
+            isinstance(entity, Robot)
+            and isinstance(passive, Monster)
+            or isinstance(entity, Monster)
+            and entity.pos == self.robot.pos
+        ):
+            self.robot_state = self.RobotState.MONSTER
+            self.pause_monster = entity if isinstance(entity, Monster) else passive
+            return
 
     def robot_move(self, delta: tuple[int, int]):
         candidate = self.robot.pos + delta
@@ -248,4 +253,4 @@ class GameState:
         if self.robot_state is not self.RobotState.PLAYING:
             self.robot_state = self.RobotState.PLAYING
             self.resync_monsters()
-        self.check_monster_collisions()
+        self.check_monster_robot_collision(self.robot)

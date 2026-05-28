@@ -75,6 +75,7 @@ class Board:
         self._grid_occupied[new_pos] = monster
         return True
 
+    def occupant_at(self, pos) -> Entity | None:
+        return self._grid_occupied.get(pos)
 
     # move_entity(obj, new_pos)
-    # occupant_at(pos)
