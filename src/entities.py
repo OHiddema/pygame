@@ -94,4 +94,4 @@ class Monster(Entity):
         else:
             new_pos = self.pos + random.choice(legal_deltas)
 
-        return (self.pos, new_pos)  # GameState will execute the move!
+        return (new_pos)  # GameState will execute the move!

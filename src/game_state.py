@@ -225,11 +225,11 @@ class GameState:
 
             if now >= m.next_move_time:
                 legal_moves = self.get_legal_monster_moves(m)
-                move_result = m.move_intelligent(legal_moves, self.robot.pos)
-                if move_result:
+                new_pos = m.move_intelligent(legal_moves, self.robot.pos)
+                if new_pos:
                     moved_anyone = True
-                    old_pos, new_pos = move_result
-                    self._grid_occupied.pop(old_pos, None)
+                    # old_pos, new_pos = move_result
+                    self._grid_occupied.pop(m.pos, None)
                     self._place_at(new_pos, m)
 
                 # Schedule next move relative to NOW
