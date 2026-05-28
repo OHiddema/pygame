@@ -1,7 +1,6 @@
 import pygame
 from settings import *
 from game_state import GameState
-# from models import Position
 
 
 def main():

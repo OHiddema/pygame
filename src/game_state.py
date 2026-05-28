@@ -1,14 +1,22 @@
 import pygame
 import time
-import random
 from enum import Enum
 from settings import *
-from entities import Robot, Coin, Monster, Entity
-from models import Position
-from grid import Grid
+from entities import Robot, Coin, Monster
+from board import Board
 
 
 class GameState:
+    """
+    Respresents the central governor of the game
+
+    Handles:
+    - score
+    - phases
+    - rounds
+    - pause states
+    - round progression.
+    """
 
     class RobotState(Enum):
         COIN = 1
@@ -20,11 +28,10 @@ class GameState:
 
         self.round = 0
 
-        self.grid = Grid()
+        self.grid = Board()
 
         self.screen = screen
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
-        self._grid_occupied: dict[Position, Entity] = {}
 
         self.monster_move_delay = MONSTER_SPEED
         self.pause_time_after_coin_catch = PAUSE_TIME
@@ -80,9 +87,9 @@ class GameState:
 
     def setup_entities(self):
         """Place robot, coin and monsters on distinct free cells."""
-        self._grid_occupied.clear()
+        self.grid._grid_occupied.clear()
         for entity in [self.robot, *self.coins, *self.monsters]:
-            self._place_at(self._random_free_position(), entity)
+            self.grid._place_at(self.grid._random_free_position(), entity)
 
     def get_status_message(self) -> str:
         match self.robot_state:
@@ -94,25 +101,6 @@ class GameState:
                 return STATUS_READY
             case self.RobotState.PLAYING:
                 return STATUS_PLAYING
-
-    def _place_at(self, pos: Position, obj: Entity):
-        """Place an object at on the grid and mark the grid cell as occupied."""
-        obj.pos = pos
-        self._grid_occupied[pos] = obj
-
-    def _random_free_position(self) -> Position:
-        """Return a uniformly random free grid cell."""
-        free_cells = []
-        for x in range(COLS):
-            for y in range(ROWS):
-                pos = Position(x, y)
-                if pos not in self._grid_occupied:
-                    free_cells.append(pos)
-
-        if not free_cells:
-            return Position(0, 0)  # should not happen
-
-        return random.choice(free_cells)
 
     def update(self):
         if self.robot_state in (self.RobotState.COIN, self.RobotState.MONSTER):
@@ -169,21 +157,19 @@ class GameState:
             for c in self.coins:
                 c.draw_CC(self.screen)
             self.robot.draw_CC(self.screen)
-        
+
         elif self.robot_state is self.RobotState.COIN:
-            self._draw_toggle_pair(self.coins[0], self.robot)        
-        
+            self._draw_toggle_pair(self.coins[0], self.robot)
+
         elif self.robot_state is self.RobotState.MONSTER:
-            self._draw_overlay()            
+            self._draw_overlay()
             for c in self.coins:
                 c.draw_CC(self.screen)
             self._draw_toggle_pair(self.pause_monster, self.robot)
 
     def _draw_toggle_pair(self, top_obj, bottom_obj):
         top, bottom = (
-            (top_obj, bottom_obj)
-            if self.pause_toggle
-            else (bottom_obj, top_obj)
+            (top_obj, bottom_obj) if self.pause_toggle else (bottom_obj, top_obj)
         )
         top.draw_CC(self.screen)
         bottom.draw_CC(self.screen)
@@ -224,13 +210,12 @@ class GameState:
                 continue
 
             if now >= m.next_move_time:
-                legal_moves = self.get_legal_monster_moves(m)
+                legal_moves = self.grid.get_legal_monster_moves(m)
                 new_pos = m.move_intelligent(legal_moves, self.robot.pos)
                 if new_pos:
                     moved_anyone = True
-                    # old_pos, new_pos = move_result
-                    self._grid_occupied.pop(m.pos, None)
-                    self._place_at(new_pos, m)
+                    self.grid._grid_occupied.pop(m.pos, None)
+                    self.grid._place_at(new_pos, m)
 
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
@@ -260,33 +245,10 @@ class GameState:
 
     def robot_move(self, delta: tuple[int, int]):
         candidate = self.robot.pos + delta
-        if not self.grid.is_candidate_within_bounds(candidate):
+        if not self.grid.is_within_bounds(candidate):
             return
         self.robot.pos = candidate
         if self.robot_state is not self.RobotState.PLAYING:
             self.robot_state = self.RobotState.PLAYING
             self.resync_monsters()
         self.check_monster_collisions()
-
-    def get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
-        """Return list of delta-moves that are legal moves."""
-        moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
-        legal = []
-
-        for delta in moves:
-            candidate = m.pos + delta
-
-            # 1. Stay in grid
-            if not self.grid.is_candidate_within_bounds(candidate):
-                continue
-
-            # 2. Get what is there
-            occupant = self._grid_occupied.get(candidate)
-
-            # 3. Monsters cannot run into each other or occupy the coin position
-            if isinstance(occupant, (Monster, Coin)):
-                continue
-
-            legal.append(delta)
-
-        return legal
