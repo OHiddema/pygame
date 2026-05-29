@@ -71,8 +71,7 @@ class Board:
         if not new_pos:
             return False
         self._grid_occupied.pop(monster.pos, None)
-        monster.pos = new_pos
-        self._grid_occupied[new_pos] = monster
+        self._place_at(new_pos, monster)
         return True
 
     def occupant_at(self, pos) -> Entity | None:
