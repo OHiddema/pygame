@@ -225,6 +225,7 @@ class GameState:
                         time.perf_counter() + self.pause_time_after_coin_catch
                     )
                 else:
+                    self.grid._grid_occupied.pop(c.pos)
                     self.coins.remove(c)
                 return
 
