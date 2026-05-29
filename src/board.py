@@ -29,17 +29,14 @@ class Board:
         self._grid_occupied[pos] = obj
 
     def move_entity(self, entity: Entity, new_pos: Position):
-        # checks Board.is_within_bounds(new_pos)
-        # checks occupancy: if occupant is allowed (e.g., coin vs robot rules) decide outcome or return False
-        # returns True/False (or raises on invalid move).
         if isinstance(entity, Robot):
             entity._pos = new_pos
         if isinstance(entity, Monster):
             self._grid_occupied.pop(entity.pos)
             self.place_at(new_pos, entity)
 
-    def remove_entity(self, entity: Entity) -> Entity | None:
-        return self._grid_occupied.pop(entity.pos, None)
+    def remove_entity(self, entity: Entity) -> Entity:
+        return self._grid_occupied.pop(entity.pos)
 
     def remove_all(self):
         self._grid_occupied.clear()

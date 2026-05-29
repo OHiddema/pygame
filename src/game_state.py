@@ -60,8 +60,8 @@ class GameState:
         self.round = 1
 
         self.robot = Robot()
-        self.monsters: list[Monster] = [Monster()]
-        self.coins: list[Coin] = [Coin()]
+        self._monsters: list[Monster] = [Monster()]
+        self._coins: list[Coin] = [Coin()]
 
         # Placeholder monster for Game Over display (will be replaced on collision)
         self.pause_monster = Monster()
@@ -75,20 +75,18 @@ class GameState:
 
     def next_round(self):
         self.round += 1
+        self._monsters.clear()
+        self._coins.clear()
         # Increase difficulty: add one monster per round (up to MAX_MONSTERS)
-        self.monsters.clear()
-        self.coins.clear()
-        number = min(
-            self.round, MAX_MONSTERS
-        )  # add one monster and one coin each round, until maximum is reached
-        self.monsters = [Monster() for _ in range(number)]
-        self.coins = [Coin() for _ in range(number)]
+        number = min(self.round, MAX_MONSTERS)
+        self._monsters = [Monster() for _ in range(number)]
+        self._coins = [Coin() for _ in range(number)]
         self.setup_entities()
 
     def setup_entities(self):
         """Place robot, coin and monsters on distinct free cells."""
         self.grid.remove_all()
-        for entity in [self.robot, *self.coins, *self.monsters]:
+        for entity in [self.robot, *self._coins, *self._monsters]:
             self.grid.place_at(self.grid.random_free_position(), entity)
 
     def get_status_message(self) -> str:
@@ -149,21 +147,21 @@ class GameState:
         text = self.get_status_message()
         centered_text_in_rect(text, statusbar_rect)
 
-        for m in self.monsters:
+        for m in self._monsters:
             if m != self.pause_monster:
                 m.draw_CC(self.screen)
 
         if self.robot_state in (self.RobotState.READY, self.RobotState.PLAYING):
-            for c in self.coins:
+            for c in self._coins:
                 c.draw_CC(self.screen)
             self.robot.draw_CC(self.screen)
 
         elif self.robot_state is self.RobotState.COIN:
-            self._draw_toggle_pair(self.coins[0], self.robot)
+            self._draw_toggle_pair(self._coins[0], self.robot)
 
         elif self.robot_state is self.RobotState.MONSTER:
             self._draw_overlay()
-            for c in self.coins:
+            for c in self._coins:
                 c.draw_CC(self.screen)
             self._draw_toggle_pair(self.pause_monster, self.robot)
 
@@ -186,23 +184,23 @@ class GameState:
         Sets next_move_time for all monsters to be staggered starting from NOW.
         """
         now = time.perf_counter()
-        num_monsters = len(self.monsters)
+        num_monsters = len(self._monsters)
         if num_monsters == 0:
             return
 
         interval = self.monster_move_delay / num_monsters
-        for i, m in enumerate(self.monsters):
+        for i, m in enumerate(self._monsters):
             # (i + 1) to not let the first monster move at the exact moment the robot starts moving
             m.next_move_time = now + ((i + 1) * interval)
 
     def process_monster_turns(self):
         now = time.perf_counter()
-        num_monsters = len(self.monsters)
+        num_monsters = len(self._monsters)
 
         if num_monsters == 0:
             return
 
-        for m in self.monsters:
+        for m in self._monsters:
             # Safety: If not synced yet (robot hasn't moved), skip
             if m.next_move_time == 0.0:
                 continue
@@ -216,19 +214,21 @@ class GameState:
                 m.next_move_time = now + self.monster_move_delay
 
     def check_coin_collision(self):
-        for c in self.coins:
+        for c in self._coins[:]:
             if self.robot.pos == c.pos:
                 self.score += 1
-                if len(self.coins) == 1:
+                if len(self._coins) == 1:
                     self.robot_state = self.RobotState.COIN
                     self.pause_end = (
                         time.perf_counter() + self.pause_time_after_coin_catch
                     )
                 else:
-                    result = self.grid.remove_entity(c)
-                    if result != None:
-                        self.coins.remove(c)
+                    self.remove_coin(c)
                 return
+            
+    def remove_coin(self, coin: Coin) -> None:
+        self.grid.remove_entity(coin)
+        self._coins.remove(coin)
 
     def check_monster_ran_into_robot(self, m: Monster):
         if self.robot.pos == m.pos:
