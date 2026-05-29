@@ -38,13 +38,22 @@ def make_image(filename: str, fallback_color: tuple[int, int, int], field_size: 
 
 class Entity:
     def __init__(self, pos: Position, image: pygame.Surface):
-        self.pos = pos
+        self._pos = pos
         self.image = image
+
+    @property
+    def pos(self):
+        return self._pos
+    
+    # temporary built in to catch inappropriate pos assignment
+    @pos.setter
+    def pos(self, new):
+        raise RuntimeError("Direct pos assignment is disallowed; use Board.move_entity() or Board.place_at()")
 
     # draw_CC stands for: draw Centred in Cell
     def draw_CC(self, screen):
-        x = self.pos.x * CELL_SIZE + (CELL_SIZE - self.image.get_width()) // 2
-        y = self.pos.y * CELL_SIZE + (CELL_SIZE - self.image.get_height()) // 2
+        x = self._pos.x * CELL_SIZE + (CELL_SIZE - self.image.get_width()) // 2
+        y = self._pos.y * CELL_SIZE + (CELL_SIZE - self.image.get_height()) // 2
         screen.blit(self.image, (x, y))
 
 
@@ -80,10 +89,10 @@ class Monster(Entity):
         is_smart = random.random() < MONSTER_IQ / 100
 
         if is_smart:
-            min_distance = min((self.pos + d).distance_to(robot_pos) for d in legal_deltas) # fmt: skip
-            best_moves = [d for d in legal_deltas if (self.pos + d).distance_to(robot_pos) == min_distance] # fmt: skip
-            new_pos = self.pos + random.choice(best_moves)
+            min_distance = min((self._pos + d).distance_to(robot_pos) for d in legal_deltas) # fmt: skip
+            best_moves = [d for d in legal_deltas if (self._pos + d).distance_to(robot_pos) == min_distance] # fmt: skip
+            new_pos = self._pos + random.choice(best_moves)
         else:
-            new_pos = self.pos + random.choice(legal_deltas)
+            new_pos = self._pos + random.choice(legal_deltas)
 
         return new_pos  # GameState will execute the move!

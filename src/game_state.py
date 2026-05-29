@@ -87,9 +87,9 @@ class GameState:
 
     def setup_entities(self):
         """Place robot, coin and monsters on distinct free cells."""
-        self.grid._grid_occupied.clear()
+        self.grid.remove_all()
         for entity in [self.robot, *self.coins, *self.monsters]:
-            self.grid._place_at(self.grid._random_free_position(), entity)
+            self.grid.place_at(self.grid.random_free_position(), entity)
 
     def get_status_message(self) -> str:
         match self.robot_state:
@@ -225,8 +225,9 @@ class GameState:
                         time.perf_counter() + self.pause_time_after_coin_catch
                     )
                 else:
-                    self.grid._grid_occupied.pop(c.pos)
-                    self.coins.remove(c)
+                    result = self.grid.remove_entity(c)
+                    if result != None:
+                        self.coins.remove(c)
                 return
 
     def check_monster_ran_into_robot(self, m: Monster):
@@ -246,7 +247,7 @@ class GameState:
         candidate = self.robot.pos + delta
         if not self.grid.is_within_bounds(candidate):
             return
-        self.robot.pos = candidate
+        self.grid.move_entity(self.robot, candidate)
         if self.robot_state is not self.RobotState.PLAYING:
             self.robot_state = self.RobotState.PLAYING
             self.resync_monsters()

@@ -1,7 +1,7 @@
 import random
 from models import Position
 from settings import ROWS, COLS
-from entities import Entity, Monster, Coin
+from entities import Entity, Monster, Coin, Robot
 
 
 class Board:
@@ -23,12 +23,28 @@ class Board:
     def is_within_bounds(self, candidate: Position) -> bool:
         return 0 <= candidate.x < COLS and 0 <= candidate.y < ROWS
 
-    def _place_at(self, pos: Position, obj: Entity):
+    def place_at(self, pos: Position, obj: Entity):
         """Place an object at on the grid and mark the grid cell as occupied."""
-        obj.pos = pos
+        obj._pos = pos
         self._grid_occupied[pos] = obj
 
-    def _random_free_position(self) -> Position:
+    def move_entity(self, entity: Entity, new_pos: Position):
+        # checks Board.is_within_bounds(new_pos)
+        # checks occupancy: if occupant is allowed (e.g., coin vs robot rules) decide outcome or return False
+        # returns True/False (or raises on invalid move).
+        if isinstance(entity, Robot):
+            entity._pos = new_pos
+        if isinstance(entity, Monster):
+            self._grid_occupied.pop(entity.pos)
+            self.place_at(new_pos, entity)
+
+    def remove_entity(self, entity: Entity) -> Entity | None:
+        return self._grid_occupied.pop(entity.pos, None)
+
+    def remove_all(self):
+        self._grid_occupied.clear()
+
+    def random_free_position(self) -> Position:
         """Return a uniformly random free grid cell."""
         free_cells = []
         for x in range(COLS):
@@ -42,7 +58,7 @@ class Board:
 
         return random.choice(free_cells)
 
-    def get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
+    def _get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
         """Return list of delta-moves that are legal moves."""
         moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         legal = []
@@ -66,15 +82,12 @@ class Board:
         return legal
     
     def move_monster(self, monster, robot_pos):
-        legal_moves = self.get_legal_monster_moves(monster)
+        legal_moves = self._get_legal_monster_moves(monster)
         new_pos = monster.move_intelligent(legal_moves, robot_pos)
         if not new_pos:
             return False
-        self._grid_occupied.pop(monster.pos, None)
-        self._place_at(new_pos, monster)
+        self.move_entity(monster, new_pos)
         return True
 
     def occupant_at(self, pos) -> Entity | None:
         return self._grid_occupied.get(pos)
-
-    # move_entity(obj, new_pos)
