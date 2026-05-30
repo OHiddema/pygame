@@ -22,14 +22,14 @@ def main():
             if event.type == pygame.KEYDOWN:
                 key = event.key
 
-                if state.robot_state is state.RobotState.MONSTER:
+                if state.robot_state is state.Phase.MONSTER:
                     if key == pygame.K_r:
-                        state.reset()
+                        state._reset()
                         continue
 
                 if state.robot_state in (
-                    state.RobotState.READY,
-                    state.RobotState.PLAYING,
+                    state.Phase.READY,
+                    state.Phase.PLAYING,
                 ):
                     key = event.key
                     if key == pygame.K_LEFT:

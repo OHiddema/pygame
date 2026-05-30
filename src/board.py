@@ -76,7 +76,7 @@ class Board:
 
     def move_monster(self, monster, robot_pos):
         legal_moves = self._get_legal_monster_moves(monster)
-        new_pos = monster.move_intelligent(legal_moves, robot_pos)
+        new_pos = monster.determine_monster_move(legal_moves, robot_pos)
         if not new_pos:
             return False
         self.move_entity(monster, new_pos)

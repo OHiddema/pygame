@@ -10,7 +10,7 @@ warned_missing_images = set()
 
 
 # loader function that tries to load and scale the image
-def load_and_scale_image(path, field_size) -> pygame.Surface:
+def _load_and_scale_image(path, field_size) -> pygame.Surface:
     path = Path(__file__).resolve().parent / "assets" / path
     if not path.exists():
         raise FileNotFoundError(f"Image file not found: {path}")
@@ -22,9 +22,9 @@ def load_and_scale_image(path, field_size) -> pygame.Surface:
     return pygame.transform.scale(image, (new_w, new_h))
 
 
-def make_image(filename: str, fallback_color: tuple[int, int, int], field_size: int = CELL_SIZE) -> pygame.Surface: # fmt: skip
+def _make_image(filename: str, fallback_color: tuple[int, int, int], field_size: int = CELL_SIZE) -> pygame.Surface: # fmt: skip
     try:
-        return load_and_scale_image(filename, field_size)
+        return _load_and_scale_image(filename, field_size)
     except FileNotFoundError:
         # fallback to colored boxes when image files could not be loaded
         filename = os.path.basename(filename)
@@ -46,7 +46,7 @@ class Entity:
         return self._pos
 
     # draw_CC stands for: draw Centred in Cell
-    def draw_CC(self, screen):
+    def draw_centered_in_grid(self, screen):
         x = self._pos.x * CELL_SIZE + (CELL_SIZE - self.image.get_width()) // 2
         y = self._pos.y * CELL_SIZE + (CELL_SIZE - self.image.get_height()) // 2
         screen.blit(self.image, (x, y))
@@ -56,7 +56,7 @@ class Robot(Entity):
     filename = "robot.png"
 
     def __init__(self, pos=Position(0, 0)):
-        image = make_image(self.filename, COLOR_ROBOT_FALLBACK)
+        image = _make_image(self.filename, COLOR_ROBOT_FALLBACK)
         super().__init__(pos, image)
 
 
@@ -64,7 +64,7 @@ class Coin(Entity):
     filename = "coin.png"
 
     def __init__(self, pos=Position(0, 0)):
-        image = make_image(self.filename, COLOR_COIN_FALLBACK)
+        image = _make_image(self.filename, COLOR_COIN_FALLBACK)
         super().__init__(pos, image)
 
 
@@ -72,11 +72,11 @@ class Monster(Entity):
     filename = "monster.png"
 
     def __init__(self, pos=Position(0, 0)):
-        image = make_image(self.filename, COLOR_MONSTER_FALLBACK)
+        image = _make_image(self.filename, COLOR_MONSTER_FALLBACK)
         super().__init__(pos, image)
         self.next_move_time = 0.0
 
-    def move_intelligent(self, legal_deltas: list[tuple[int, int]], robot_pos: Position): # fmt: skip
+    def determine_monster_move(self, legal_deltas: list[tuple[int, int]], robot_pos: Position): # fmt: skip
         if not legal_deltas:  # an empty list evaluates to False
             return
 
