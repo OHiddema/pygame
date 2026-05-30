@@ -28,7 +28,7 @@ class GameState:
 
         self.round = 0
 
-        self.grid = Board()
+        self.board = Board()
 
         self.screen = screen
         self.font = pygame.font.SysFont(FONT_NAME, FONT_SIZE)
@@ -85,9 +85,9 @@ class GameState:
 
     def setup_entities(self):
         """Place robot, coin and monsters on distinct free cells."""
-        self.grid.remove_all()
+        self.board.remove_all()
         for entity in [self.robot, *self._coins, *self._monsters]:
-            self.grid.place_at(self.grid.random_free_position(), entity)
+            self.board.place_at(self.board.random_free_position(), entity)
 
     def get_status_message(self) -> str:
         match self.robot_state:
@@ -193,7 +193,7 @@ class GameState:
         now = time.perf_counter()
         for m in self._monsters:
             if now >= m.next_move_time:
-                has_moved = self.grid.move_monster(m, self.robot.pos)
+                has_moved = self.board.move_monster(m, self.robot.pos)
                 if has_moved:
                     self.check_monster_ran_into_robot(m)
                 # Schedule next move relative to NOW
@@ -213,7 +213,7 @@ class GameState:
                 return
 
     def remove_coin(self, coin: Coin) -> None:
-        self.grid.remove_entity(coin)
+        self.board.remove_entity(coin)
         self._coins.remove(coin)
 
     def check_monster_ran_into_robot(self, m: Monster):
@@ -221,7 +221,7 @@ class GameState:
             self.activate_monster_state(m)
 
     def check_robot_ran_into_monster(self, r: Robot):
-        occupant = self.grid.occupant_at(r.pos)
+        occupant = self.board.occupant_at(r.pos)
         if isinstance(occupant, Monster):
             self.activate_monster_state(occupant)
 
@@ -231,9 +231,9 @@ class GameState:
 
     def robot_move(self, delta: tuple[int, int]):
         candidate = self.robot.pos + delta
-        if not self.grid.is_within_bounds(candidate):
+        if not self.board.is_within_bounds(candidate):
             return
-        self.grid.move_entity(self.robot, candidate)
+        self.board.move_entity(self.robot, candidate)
         if self.robot_state is not self.RobotState.PLAYING:
             self.robot_state = self.RobotState.PLAYING
             self.resync_monsters()
