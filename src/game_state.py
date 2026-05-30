@@ -184,32 +184,18 @@ class GameState:
         Sets next_move_time for all monsters to be staggered starting from NOW.
         """
         now = time.perf_counter()
-        num_monsters = len(self._monsters)
-        if num_monsters == 0:
-            return
-
-        interval = self.monster_move_delay / num_monsters
+        interval = self.monster_move_delay / len(self._monsters)
         for i, m in enumerate(self._monsters):
             # (i + 1) to not let the first monster move at the exact moment the robot starts moving
             m.next_move_time = now + ((i + 1) * interval)
 
     def process_monster_turns(self):
         now = time.perf_counter()
-        num_monsters = len(self._monsters)
-
-        if num_monsters == 0:
-            return
-
         for m in self._monsters:
-            # Safety: If not synced yet (robot hasn't moved), skip
-            if m.next_move_time == 0.0:
-                continue
-
             if now >= m.next_move_time:
                 has_moved = self.grid.move_monster(m, self.robot.pos)
                 if has_moved:
                     self.check_monster_ran_into_robot(m)
-
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
 
@@ -225,7 +211,7 @@ class GameState:
                 else:
                     self.remove_coin(c)
                 return
-            
+
     def remove_coin(self, coin: Coin) -> None:
         self.grid.remove_entity(coin)
         self._coins.remove(coin)
