@@ -44,11 +44,6 @@ class Entity:
     @property
     def pos(self):
         return self._pos
-    
-    # temporary built in to catch inappropriate pos assignment
-    @pos.setter
-    def pos(self, new):
-        raise RuntimeError("Direct pos assignment is disallowed; use Board.move_entity() or Board.place_at()")
 
     # draw_CC stands for: draw Centred in Cell
     def draw_CC(self, screen):
