@@ -2,7 +2,7 @@ import pygame
 import time
 from enum import Enum
 from settings import *
-from entities import Robot, Coin, Monster
+from entities import Robot, Coin, Monster, Entity
 from board import Board
 
 
@@ -55,6 +55,9 @@ class GameState:
 
         self._reset()
 
+    def _get_all_entities(self) -> list[Entity]:
+        return [self.robot, *self._monsters, *self._coins]
+
     def _reset(self):
 
         self.round = 1
@@ -71,7 +74,7 @@ class GameState:
         self.pause_end = 0.0
         self.pause_toggle = False
         self.pause_toggle_next = 0.0
-        self._setup_entities()
+        self.board.setup_entities(self._get_all_entities())
 
     def handle_event(self, event: pygame.Event):
         if event.type != pygame.KEYDOWN:
@@ -98,13 +101,7 @@ class GameState:
         number = min(self.round, MAX_MONSTERS)
         self._monsters = [Monster() for _ in range(number)]
         self._coins = [Coin() for _ in range(number)]
-        self._setup_entities()
-
-    def _setup_entities(self):
-        """Place robot, coin and monsters on distinct free cells."""
-        self.board.remove_all()
-        for entity in [self.robot, *self._coins, *self._monsters]:
-            self.board.place_at(self.board.random_free_position(), entity)
+        self.board.setup_entities(self._get_all_entities())
 
     def _get_status_message(self) -> str:
         match self.robot_state:

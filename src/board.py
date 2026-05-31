@@ -62,6 +62,12 @@ class Board:
     # below this line: all methods that possibly alter _grid_occupied and entity positions
     # these methods can only be called from GameState (directly or indirectly)
 
+    def setup_entities(self, entities: list[Entity]):
+        """Place robot, coin and monsters on distinct free cells."""
+        self.remove_all()
+        for entity in entities:
+            self.place_at(self.random_free_position(), entity)
+
     def place_at(self, pos: Position, obj: Entity):
         """Place an object at on the grid and mark the grid cell as occupied."""
         obj._pos = pos
