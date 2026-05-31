@@ -73,6 +73,23 @@ class GameState:
         self.pause_toggle_next = 0.0
         self._setup_entities()
 
+    def handle_event(self, event: pygame.Event):
+        if event.type != pygame.KEYDOWN:
+            return
+        if self.robot_state is self.Phase.MONSTER:
+            if event.key == pygame.K_r:
+                self._reset()
+            return
+        if self.robot_state in (self.Phase.READY, self.Phase.PLAYING,):  # fmt: skip
+            if event.key == pygame.K_LEFT:
+                self.robot_move((-1, 0))
+            elif event.key == pygame.K_RIGHT:
+                self.robot_move((1, 0))
+            elif event.key == pygame.K_UP:
+                self.robot_move((0, -1))
+            elif event.key == pygame.K_DOWN:
+                self.robot_move((0, 1))
+
     def _next_round(self):
         self.round += 1
         self._monsters.clear()

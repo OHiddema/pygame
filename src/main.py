@@ -18,29 +18,8 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
-            if event.type == pygame.KEYDOWN:
-                key = event.key
-
-                if state.robot_state is state.Phase.MONSTER:
-                    if key == pygame.K_r:
-                        state._reset()
-                        continue
-
-                if state.robot_state in (
-                    state.Phase.READY,
-                    state.Phase.PLAYING,
-                ):
-                    key = event.key
-                    if key == pygame.K_LEFT:
-                        state.robot_move((-1, 0))
-                    elif key == pygame.K_RIGHT:
-                        state.robot_move((1, 0))
-                    elif key == pygame.K_UP:
-                        state.robot_move((0, -1))
-                    elif key == pygame.K_DOWN:
-                        state.robot_move((0, 1))
-
+            else:
+                state.handle_event(event)
         state.update()
         state.draw()
 
