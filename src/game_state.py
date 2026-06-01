@@ -125,7 +125,9 @@ class GameState:
             return
 
         if self.robot_state is self.Phase.PLAYING:
-            self._check_coin_collision()
+            collided_coin = self._find_collided_coin()
+            if collided_coin is not None:
+                self._handle_coin_collision(collided_coin)
 
         # check again -> value could be reset by check_coin_collision()
         if self.robot_state is self.Phase.PLAYING:
@@ -224,19 +226,19 @@ class GameState:
                 # Schedule next move relative to NOW
                 m.next_move_time = now + self.monster_move_delay
 
-    # belongs to Phase.PLAYING
-    def _check_coin_collision(self):
-        for c in self._coins[:]:
+    def _find_collided_coin(self) -> Coin | None:
+        for c in self._coins:
             if self.robot.pos == c.pos:
-                self.score += 1
-                if len(self._coins) == 1:
-                    self.robot_state = self.Phase.COIN
-                    self.pause_end = (
-                        time.perf_counter() + self.pause_time_after_coin_catch
-                    )
-                else:
-                    self._remove_coin(c)
-                return
+                return c
+        return None
+    
+    def _handle_coin_collision(self, coin: Coin):
+        self.score += 1
+        if len(self._coins) == 1:
+            self.robot_state = self.Phase.COIN
+            self.pause_end = time.perf_counter() + self.pause_time_after_coin_catch # fmt: skip
+        else:
+            self._remove_coin(coin)
 
     # belongs to Phase.PLAYING
     def _remove_coin(self, coin: Coin) -> None:
