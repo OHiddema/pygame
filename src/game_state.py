@@ -131,7 +131,9 @@ class GameState:
 
         # check again -> value could be reset by check_coin_collision()
         if self.robot_state is self.Phase.PLAYING:
-            self._process_monster_turns()
+            now = time.perf_counter()
+            monsters_ready_to_move = self._find_monsters_ready_to_move(now)
+            self._process_monster_moves(monsters_ready_to_move, now)
 
     def draw(self):
 
@@ -216,15 +218,21 @@ class GameState:
             m.next_move_time = now + ((i + 1) * interval)
 
     # belongs to Phase.PLAYING
-    def _process_monster_turns(self):
-        now = time.perf_counter()
+
+    def _find_monsters_ready_to_move(self, now: float) -> list[Monster]:
+        monsters_to_move: list[Monster] = []
         for m in self._monsters:
             if now >= m.next_move_time:
-                has_moved = self.board.move_monster(m, self.robot.pos)
-                if has_moved:
-                    self._check_monster_ran_into_robot(m)
-                # Schedule next move relative to NOW
-                m.next_move_time = now + self.monster_move_delay
+                monsters_to_move.append(m)
+        return monsters_to_move
+    
+    def _process_monster_moves(self, monsters: list[Monster], now: float):
+        for m in monsters:
+            has_moved = self.board.move_monster(m, self.robot.pos)
+            if has_moved:
+                self._check_monster_ran_into_robot(m)
+            # Schedule next move relative to NOW
+            m.next_move_time = now + self.monster_move_delay
 
     def _find_collided_coin(self) -> Coin | None:
         for c in self._coins:
