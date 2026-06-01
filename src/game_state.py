@@ -69,7 +69,7 @@ class GameState:
         self._coins: list[Coin] = [Coin()]
 
         # Placeholder monster for Game Over display (will be replaced on collision)
-        self.pause_monster = Monster()
+        self.overlay_monster = Monster()
 
         self.score = 0
         self.robot_state = self.Phase.READY
@@ -184,7 +184,7 @@ class GameState:
         centered_text_in_rect(text, statusbar_rect)
 
         for m in self._monsters:
-            if m != self.pause_monster:
+            if m != self.overlay_monster:
                 m.draw_centered_in_grid(self.screen)
 
         if self.robot_state in (self.Phase.READY, self.Phase.PLAYING):
@@ -199,7 +199,7 @@ class GameState:
             draw_overlay(self)
             for c in self._coins:
                 c.draw_centered_in_grid(self.screen)
-            draw_toggle_pair(self, self.pause_monster, self.robot)
+            draw_toggle_pair(self, self.overlay_monster, self.robot)
 
     # belongs to Phase.READY
     def _resync_monsters(self):
@@ -257,7 +257,7 @@ class GameState:
     # belongs to Phase.PLAYING
     def _activate_monster_state(self, m: Monster):
         self.robot_state = self.Phase.MONSTER
-        self.pause_monster = m
+        self.overlay_monster = m
 
     # belongs to Phase.PLAYING/READY
     def robot_move(self, delta: tuple[int, int]):
