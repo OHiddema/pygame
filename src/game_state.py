@@ -226,7 +226,7 @@ class GameState:
                 monsters_to_move.append(m)
         return monsters_to_move
     
-    def _process_monster_moves(self, monsters: list[Monster], now: float):
+    def _process_monster_moves(self, monsters: list[Monster], now: float) -> None:
         for m in monsters:
             has_moved = self.board.move_monster(m, self.robot.pos)
             if has_moved:
@@ -240,7 +240,7 @@ class GameState:
                 return c
         return None
     
-    def _handle_coin_collision(self, coin: Coin):
+    def _handle_coin_collision(self, coin: Coin) -> None:
         self.score += 1
         if len(self._coins) == 1:
             self.robot_state = self.Phase.COIN
