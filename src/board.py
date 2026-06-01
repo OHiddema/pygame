@@ -70,12 +70,12 @@ class Board:
 
     def place_at(self, pos: Position, obj: Entity):
         """Place an object at on the grid and mark the grid cell as occupied."""
-        obj._pos = pos
+        obj._set_pos(pos)
         self._grid_occupied[pos] = obj
 
     def move_entity(self, entity: Entity, new_pos: Position):
         if isinstance(entity, Robot):
-            entity._pos = new_pos
+            entity._set_pos(new_pos)
         if isinstance(entity, Monster):
             self._grid_occupied.pop(entity.pos)
             self.place_at(new_pos, entity)

@@ -44,6 +44,10 @@ class Entity:
     @property
     def pos(self):
         return self._pos
+    
+    # This method shall only be used bij class Board !!!
+    def _set_pos(self, pos: Position):
+        self._pos = pos
 
     # draw_CC stands for: draw Centred in Cell
     def draw_centered_in_grid(self, screen):
