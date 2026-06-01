@@ -127,7 +127,8 @@ class GameState:
         if self.robot_state is self.Phase.PLAYING:
             collided_coin = self._find_collided_coin()
             if collided_coin is not None:
-                self._handle_coin_collision(collided_coin)
+                is_last_coin = self._all_coins_catched()
+                self._handle_coin_collision(collided_coin, is_last_coin)
 
         # check again -> value could be reset by check_coin_collision()
         if self.robot_state is self.Phase.PLAYING:
@@ -240,13 +241,16 @@ class GameState:
                 return c
         return None
     
-    def _handle_coin_collision(self, coin: Coin) -> None:
+    def _handle_coin_collision(self, coin: Coin, is_last_coin: bool) -> None:
         self.score += 1
-        if len(self._coins) == 1:
+        if is_last_coin:
             self.robot_state = self.Phase.COIN
             self.pause_end = time.perf_counter() + self.pause_time_after_coin_catch # fmt: skip
         else:
             self._remove_coin(coin)
+
+    def _all_coins_catched(self) -> bool:
+        return len(self._coins) == 1
 
     # belongs to Phase.PLAYING
     def _remove_coin(self, coin: Coin) -> None:
