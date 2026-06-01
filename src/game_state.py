@@ -90,13 +90,13 @@ class GameState:
         # belongs to Phase.READY or PLAYING
         if self.robot_state in (self.Phase.READY, self.Phase.PLAYING,):  # fmt: skip
             if event.key == pygame.K_LEFT:
-                self.robot_move((-1, 0))
+                self.try_robot_move((-1, 0))
             elif event.key == pygame.K_RIGHT:
-                self.robot_move((1, 0))
+                self.try_robot_move((1, 0))
             elif event.key == pygame.K_UP:
-                self.robot_move((0, -1))
+                self.try_robot_move((0, -1))
             elif event.key == pygame.K_DOWN:
-                self.robot_move((0, 1))
+                self.try_robot_move((0, 1))
 
     # belongs to Phase.COIN
     def _next_round(self):
@@ -260,11 +260,11 @@ class GameState:
         self.overlay_monster = m
 
     # belongs to Phase.PLAYING/READY
-    def robot_move(self, delta: tuple[int, int]):
+    def try_robot_move(self, delta: tuple[int, int]):
         candidate = self.robot.pos + delta
         if not self.board.is_within_bounds(candidate):
             return
-        self.board.move_entity(self.robot, candidate)
+        self.board.move_robot(self.robot, candidate)
         # robot makes first move (in new round)
         if self.robot_state is not self.Phase.PLAYING:
             self.robot_state = self.Phase.PLAYING

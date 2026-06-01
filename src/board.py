@@ -73,19 +73,16 @@ class Board:
         obj._set_pos(pos)
         self._grid_occupied[pos] = obj
 
-    def move_entity(self, entity: Entity, new_pos: Position):
-        if isinstance(entity, Robot):
-            entity._set_pos(new_pos)
-        if isinstance(entity, Monster):
-            self._grid_occupied.pop(entity.pos)
-            self.place_at(new_pos, entity)
+    def move_robot(self, entity: Entity, new_pos: Position):
+        entity._set_pos(new_pos)
 
     def move_monster(self, monster, robot_pos):
         legal_moves = self._get_legal_monster_moves(monster)
         new_pos = monster.determine_monster_move(legal_moves, robot_pos)
         if not new_pos:
             return False
-        self.move_entity(monster, new_pos)
+        self._grid_occupied.pop(monster.pos)
+        self.place_at(new_pos, monster)
         return True
 
     def remove_entity(self, entity: Entity) -> Entity:
