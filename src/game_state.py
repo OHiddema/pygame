@@ -8,13 +8,13 @@ from board import Board
 
 class GameState:
     """
-    Respresents the central governor of the game
+    Represents the central governor of the game
 
     Handles:
     - score
     - phases
     - rounds
-    - pause states
+    - pause phases
     - round progression.
     """
 
@@ -37,11 +37,9 @@ class GameState:
         self.pause_time_after_coin_catch = PAUSE_TIME
         self.pause_toggle_interval = PAUSE_TOGGLE_INTERVAL
 
-        # Create grid surface
         self.grid_surface = pygame.Surface((GRID_W, GRID_H))
         self.grid_surface.fill(COLOR_BCKGRND_GRID)
 
-        # vertical lines
         for i in range(0, COLS + 1):
             a = (CELL_SIZE * i, 0)
             b = (CELL_SIZE * i, GRID_H)
@@ -53,14 +51,12 @@ class GameState:
             b = (GRID_W, CELL_SIZE * i)
             pygame.draw.line(self.grid_surface, COLOR_LINES, a, b)
 
-        self._reset()
+        self._reset_game()
 
-    # helper method
     def _get_all_entities(self) -> list[Entity]:
         return [self.robot, *self._monsters, *self._coins]
 
-    # belongs to Phase.MONSTER (or startup...)
-    def _reset(self):
+    def _reset_game(self):
 
         self.round = 1
 
@@ -68,79 +64,76 @@ class GameState:
         self._monsters: list[Monster] = [Monster()]
         self._coins: list[Coin] = [Coin()]
 
-        # Placeholder monster for Game Over display (will be replaced on collision)
-        self.overlay_monster = Monster()
+        # dummy monster, used after robot/monster collision
+        self.collision_monster = Monster()
 
         self.score = 0
-        self.robot_state = self.Phase.READY
+        self.phase = self.Phase.READY
         self.pause_end = 0.0
         self.pause_toggle = False
-        self.pause_toggle_next = 0.0
-        self.board.setup_entities(self._get_all_entities())
+        self.next_pause_toggle_time = 0.0
+        self.board.place_entities_on_grid(self._get_all_entities())
 
     def handle_event(self, event: pygame.Event):
         if event.type != pygame.KEYDOWN:
             return
         
-        # belongs to Phase.MONSTER
-        if self.robot_state is self.Phase.MONSTER:
+        if self.phase is self.Phase.MONSTER:
             if event.key == pygame.K_r:
-                self._reset()
+                self._reset_game()
             return
-        # belongs to Phase.READY or PLAYING
-        if self.robot_state in (self.Phase.READY, self.Phase.PLAYING,):  # fmt: skip
-            if event.key == pygame.K_LEFT:
-                self.try_robot_move((-1, 0))
-            elif event.key == pygame.K_RIGHT:
-                self.try_robot_move((1, 0))
-            elif event.key == pygame.K_UP:
-                self.try_robot_move((0, -1))
-            elif event.key == pygame.K_DOWN:
-                self.try_robot_move((0, 1))
 
-    # belongs to Phase.COIN
-    def _next_round(self):
+        if self.phase in (self.Phase.READY, self.Phase.PLAYING,):  # fmt: skip
+            if event.key == pygame.K_LEFT:
+                self._attempt_robot_move((-1, 0))
+            elif event.key == pygame.K_RIGHT:
+                self._attempt_robot_move((1, 0))
+            elif event.key == pygame.K_UP:
+                self._attempt_robot_move((0, -1))
+            elif event.key == pygame.K_DOWN:
+                self._attempt_robot_move((0, 1))
+
+    def _setup_next_round(self):
         self.round += 1
         self._monsters.clear()
         self._coins.clear()
+
         # Increase difficulty: add one monster per round (up to MAX_MONSTERS)
         number = min(self.round, MAX_MONSTERS)
         self._monsters = [Monster() for _ in range(number)]
         self._coins = [Coin() for _ in range(number)]
-        self.board.setup_entities(self._get_all_entities())
+        self.board.place_entities_on_grid(self._get_all_entities())
 
-    # maybe spit up for playing versus coin/monster?
     def update(self):
-        if self.robot_state in (self.Phase.COIN, self.Phase.MONSTER):
+        if self.phase in (self.Phase.COIN, self.Phase.MONSTER):
 
             now = time.perf_counter()
             # Toggle coin/monster on top vs robot on top
-            if now >= self.pause_toggle_next:
+            if now >= self.next_pause_toggle_time:
                 self.pause_toggle = not self.pause_toggle
-                self.pause_toggle_next = now + self.pause_toggle_interval
-            if self.robot_state is self.Phase.COIN:
+                self.next_pause_toggle_time = now + self.pause_toggle_interval
+            if self.phase is self.Phase.COIN:
                 if now >= self.pause_end:
-                    self.robot_state = self.Phase.READY
-                    self._next_round()
+                    self.phase = self.Phase.READY
+                    self._setup_next_round()
             return
 
-        if self.robot_state is self.Phase.PLAYING:
-            collided_coin = self._find_collided_coin()
+        if self.phase is self.Phase.PLAYING:
+            collided_coin = self._get_collided_coin()
             if collided_coin is not None:
-                is_last_coin = self._all_coins_catched()
+                is_last_coin = self._are_all_coins_caught()
                 self._handle_coin_collision(collided_coin, is_last_coin)
 
-        # check again -> value could be reset by check_coin_collision()
-        if self.robot_state is self.Phase.PLAYING:
+        # check again -> phase could be altered by _handle_coin_collision()
+        if self.phase is self.Phase.PLAYING:
             now = time.perf_counter()
-            monsters_ready_to_move = self._find_monsters_ready_to_move(now)
+            monsters_ready_to_move = self._get_monsters_ready_to_move(now)
             self._process_monster_moves(monsters_ready_to_move, now)
 
     def draw(self):
 
-        # helper method for draw
         def _get_status_message(self) -> str:
-            match self.robot_state:
+            match self.phase:
                 case self.Phase.MONSTER:
                     return STATUS_GAME_OVER
                 case self.Phase.COIN:
@@ -150,137 +143,120 @@ class GameState:
                 case self.Phase.PLAYING:
                     return STATUS_PLAYING
                 case _:
-                    raise RuntimeError(f"Unexpected state: {self.robot_state}")
+                    raise RuntimeError(f"Unexpected state: {self.phase}")
                 
-        # helper
-        def centered_text_in_rect(text: str, rect: pygame.Rect):
+        def _draw_centered_text(text: str, rect: pygame.Rect):
             text_surface = self.font.render(text, True, COLOR_TEXT)
             text_rect = text_surface.get_rect(center=rect.center)
             self.screen.blit(text_surface, text_rect)
 
-        # helper
-        def draw_toggle_pair(self, top_obj, bottom_obj):
+        def _draw_toggle_pair(self, top_obj, bottom_obj):
             top, bottom = (
                 (top_obj, bottom_obj) if self.pause_toggle else (bottom_obj, top_obj)
             )
-            top.draw_centered_in_grid(self.screen)
-            bottom.draw_centered_in_grid(self.screen)
+            top.draw_centered_in_cell(self.screen)
+            bottom.draw_centered_in_cell(self.screen)
 
-        # helper
-        def draw_overlay(self):
-            # Semi-transparent overlay for game over
+        def _draw_overlay(self):
             overlay = pygame.Surface((GRID_W, GRID_H), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 128))
             self.screen.blit(overlay, (0, 0))
 
-        # Draw grid area (grid_surface is already built-up in __init__)
         self.screen.blit(self.grid_surface, (0, 0))
 
-        # Draw scorebar
         scoreboard_rect = pygame.Rect(0, GRID_H, GRID_W, SCOREBAR_HEIGHT)
         pygame.draw.rect(self.screen, COLOR_BCKGRND_SCOREBAR, scoreboard_rect)
         text = f"Score: {self.score}"
-        centered_text_in_rect(text, scoreboard_rect)
+        _draw_centered_text(text, scoreboard_rect)
 
-        # Draw statusbar
         statusbar_rect = pygame.Rect(0, GRID_H + SCOREBAR_HEIGHT, GRID_W, STATUSBAR_HEIGHT) # fmt: skip
         pygame.draw.rect(self.screen, COLOR_BCKGRND_STATUSBAR, statusbar_rect)
         text = _get_status_message(self)
-        centered_text_in_rect(text, statusbar_rect)
+        _draw_centered_text(text, statusbar_rect)
 
-        for m in self._monsters:
-            if m != self.overlay_monster:
-                m.draw_centered_in_grid(self.screen)
+        for monster in self._monsters:
+            if monster != self.collision_monster:
+                monster.draw_centered_in_cell(self.screen)
 
-        if self.robot_state in (self.Phase.READY, self.Phase.PLAYING):
-            for c in self._coins:
-                c.draw_centered_in_grid(self.screen)
-            self.robot.draw_centered_in_grid(self.screen)
+        if self.phase in (self.Phase.READY, self.Phase.PLAYING):
+            for coin in self._coins:
+                coin.draw_centered_in_cell(self.screen)
+            self.robot.draw_centered_in_cell(self.screen)
 
-        elif self.robot_state is self.Phase.COIN:
-            draw_toggle_pair(self, self._coins[0], self.robot)
+        elif self.phase is self.Phase.COIN:
+            _draw_toggle_pair(self, self._coins[0], self.robot)
 
-        elif self.robot_state is self.Phase.MONSTER:
-            draw_overlay(self)
-            for c in self._coins:
-                c.draw_centered_in_grid(self.screen)
-            draw_toggle_pair(self, self.overlay_monster, self.robot)
+        elif self.phase is self.Phase.MONSTER:
+            _draw_overlay(self)
+            for coin in self._coins:
+                coin.draw_centered_in_cell(self.screen)
+            _draw_toggle_pair(self, self.collision_monster, self.robot)
 
-    # belongs to Phase.READY
     def _resync_monsters(self):
-        """
-        Called exactly when the robot makes its first move.
-        Sets next_move_time for all monsters to be staggered starting from NOW.
-        """
+        # Called exactly when the robot makes its first move.
+        # Sets next_move_time for all monsters to be staggered starting from NOW.
         now = time.perf_counter()
         interval = self.monster_move_delay / len(self._monsters)
-        for i, m in enumerate(self._monsters):
+        for i, monster in enumerate(self._monsters):
             # (i + 1) to not let the first monster move at the exact moment the robot starts moving
-            m.next_move_time = now + ((i + 1) * interval)
+            monster.next_move_time = now + ((i + 1) * interval)
 
-    # belongs to Phase.PLAYING
-
-    def _find_monsters_ready_to_move(self, now: float) -> list[Monster]:
+    def _get_monsters_ready_to_move(self, now: float) -> list[Monster]:
         monsters_to_move: list[Monster] = []
-        for m in self._monsters:
-            if now >= m.next_move_time:
-                monsters_to_move.append(m)
+        for monster in self._monsters:
+            if now >= monster.next_move_time:
+                monsters_to_move.append(monster)
         return monsters_to_move
     
     def _process_monster_moves(self, monsters: list[Monster], now: float) -> None:
-        for m in monsters:
-            has_moved = self.board.move_monster(m, self.robot.pos)
+        for monster in monsters:
+            has_moved = self.board.move_monster(monster, self.robot.pos)
             if has_moved:
-                self._check_monster_ran_into_robot(m)
+                self._check_monster_ran_into_robot(monster)
             # Schedule next move relative to NOW
-            m.next_move_time = now + self.monster_move_delay
+            monster.next_move_time = now + self.monster_move_delay
 
-    def _find_collided_coin(self) -> Coin | None:
-        for c in self._coins:
-            if self.robot.pos == c.pos:
-                return c
+    def _get_collided_coin(self) -> Coin | None:
+        for coin in self._coins:
+            if self.robot.pos == coin.pos:
+                return coin
         return None
     
     def _handle_coin_collision(self, coin: Coin, is_last_coin: bool) -> None:
         self.score += 1
         if is_last_coin:
-            self.robot_state = self.Phase.COIN
+            self.phase = self.Phase.COIN
             self.pause_end = time.perf_counter() + self.pause_time_after_coin_catch # fmt: skip
         else:
             self._remove_coin(coin)
 
-    def _all_coins_catched(self) -> bool:
+    def _are_all_coins_caught(self) -> bool:
         return len(self._coins) == 1
 
-    # belongs to Phase.PLAYING
     def _remove_coin(self, coin: Coin) -> None:
         self.board.remove_entity(coin)
         self._coins.remove(coin)
 
-    # belongs to Phase.PLAYING
-    def _check_monster_ran_into_robot(self, m: Monster):
-        if self.robot.pos == m.pos:
-            self._activate_monster_state(m)
+    def _check_monster_ran_into_robot(self, monster: Monster):
+        if self.robot.pos == monster.pos:
+            self._activate_monster_phase(monster)
 
-    # belongs to Phase.PLAYING
-    def _check_robot_ran_into_monster(self, r: Robot):
-        occupant = self.board.occupant_at(r.pos)
+    def _check_robot_ran_into_monster(self, robot: Robot):
+        occupant = self.board.occupant_at(robot.pos)
         if isinstance(occupant, Monster):
-            self._activate_monster_state(occupant)
+            self._activate_monster_phase(occupant)
 
-    # belongs to Phase.PLAYING
-    def _activate_monster_state(self, m: Monster):
-        self.robot_state = self.Phase.MONSTER
-        self.overlay_monster = m
+    def _activate_monster_phase(self, monster: Monster):
+        self.phase = self.Phase.MONSTER
+        self.collision_monster = monster
 
-    # belongs to Phase.PLAYING/READY
-    def try_robot_move(self, delta: tuple[int, int]):
+    def _attempt_robot_move(self, delta: tuple[int, int]):
         candidate = self.robot.pos + delta
         if not self.board.is_within_bounds(candidate):
             return
         self.board.move_robot(self.robot, candidate)
         # robot makes first move (in new round)
-        if self.robot_state is not self.Phase.PLAYING:
-            self.robot_state = self.Phase.PLAYING
+        if self.phase is not self.Phase.PLAYING:
+            self.phase = self.Phase.PLAYING
             self._resync_monsters()
         self._check_robot_ran_into_monster(self.robot)

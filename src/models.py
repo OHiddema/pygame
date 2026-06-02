@@ -6,7 +6,7 @@ class Position:
     y: int
 
     def __add__(self, other):
-        """Allow adding two positions or a position and a delta (dx, dy)"""
+        # Allow adding two Position objects or a Position object and a tuple
         if isinstance(other, tuple):
             dx, dy = other
             return Position(self.x + dx, self.y + dy)

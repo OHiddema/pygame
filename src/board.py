@@ -13,41 +13,37 @@ class Board:
     def __init__(self) -> None:
         self.width = COLS
         self.height = ROWS
-        self._grid_occupied: dict[Position, Entity] = {}
+        self._occupied_cells: dict[Position, Entity] = {}
 
     def is_within_bounds(self, candidate: Position) -> bool:
         return 0 <= candidate.x < COLS and 0 <= candidate.y < ROWS
 
-    def random_free_position(self) -> Position:
-        """Return a uniformly random free grid cell."""
+    def _get_random_free_position(self) -> Position:
         free_cells = []
         for x in range(COLS):
             for y in range(ROWS):
                 pos = Position(x, y)
-                if pos not in self._grid_occupied:
+                if pos not in self._occupied_cells:
                     free_cells.append(pos)
 
         if not free_cells:
-            return Position(0, 0)  # should not happen
+            return Position(0, 0)
 
         return random.choice(free_cells)
 
-    def _get_legal_monster_moves(self, m: Monster) -> list[tuple[int, int]]:
-        """Return list of delta-moves that are legal moves."""
+    def _get_legal_monster_moves(self, monster: Monster) -> list[tuple[int, int]]:
         moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
         legal = []
 
         for delta in moves:
-            candidate = m.pos + delta
+            candidate = monster.pos + delta
 
-            # 1. Stay in grid
             if not self.is_within_bounds(candidate):
                 continue
 
-            # 2. Get what is there
-            occupant = self._grid_occupied.get(candidate)
+            occupant = self._occupied_cells.get(candidate)
 
-            # 3. Monsters cannot run into each other or occupy the coin position
+            # Monsters cannot run into each other or occupy the coin position
             if isinstance(occupant, (Monster, Coin)):
                 continue
 
@@ -56,22 +52,16 @@ class Board:
         return legal
 
     def occupant_at(self, pos) -> Entity | None:
-        return self._grid_occupied.get(pos)
+        return self._occupied_cells.get(pos)
 
-    # -----------------------------------------------------------------------------------------
-    # below this line: all methods that possibly alter _grid_occupied and entity positions
-    # these methods can only be called from GameState (directly or indirectly)
-
-    def setup_entities(self, entities: list[Entity]):
-        """Place robot, coin and monsters on distinct free cells."""
-        self.remove_all()
+    def place_entities_on_grid(self, entities: list[Entity]):
+        self._remove_all_entities()
         for entity in entities:
-            self.place_at(self.random_free_position(), entity)
+            self._place_entity_on_grid(self._get_random_free_position(), entity)
 
-    def place_at(self, pos: Position, obj: Entity):
-        """Place an object at on the grid and mark the grid cell as occupied."""
+    def _place_entity_on_grid(self, pos: Position, obj: Entity):
         obj._set_pos(pos)
-        self._grid_occupied[pos] = obj
+        self._occupied_cells[pos] = obj
 
     def move_robot(self, entity: Entity, new_pos: Position):
         entity._set_pos(new_pos)
@@ -81,12 +71,12 @@ class Board:
         new_pos = monster.determine_monster_move(legal_moves, robot_pos)
         if not new_pos:
             return False
-        self._grid_occupied.pop(monster.pos)
-        self.place_at(new_pos, monster)
+        self._occupied_cells.pop(monster.pos)
+        self._place_entity_on_grid(new_pos, monster)
         return True
 
     def remove_entity(self, entity: Entity) -> Entity:
-        return self._grid_occupied.pop(entity.pos)
+        return self._occupied_cells.pop(entity.pos)
 
-    def remove_all(self):
-        self._grid_occupied.clear()
+    def _remove_all_entities(self):
+        self._occupied_cells.clear()

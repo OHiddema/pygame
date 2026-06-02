@@ -1,4 +1,4 @@
-# Grid sizes
+# grid sizes
 COLS = 10
 ROWS = 8
 CELL_SIZE = 64
@@ -7,7 +7,7 @@ CELL_SIZE = 64
 SCOREBAR_HEIGHT = 40
 STATUSBAR_HEIGHT = 40
 
-# Gameplay
+# gameplay
 PAUSE_TIME = 2.0  # Pause time [sec] after catching a coin
 MONSTER_SPEED = 1.0  # Time [sec] between monster moves
 PAUSE_TOGGLE_INTERVAL = 0.2  # Switch time [sec] between robot and coin/monster on top
@@ -28,7 +28,7 @@ COLOR_ROBOT_FALLBACK = (128, 128, 128)
 COLOR_COIN_FALLBACK = (0, 200, 0)
 COLOR_MONSTER_FALLBACK = (0, 0, 0)
 
-# max number of monsters as a percentage of the total number of grid cells
+# max number of monsters as a percentage of the total number of cells in the grid
 MAX_MONSTERS = int((COLS * ROWS) * MAX_MONSTER_PCT / 100)
 if MAX_MONSTERS < 3:
     MAX_MONSTERS = 3

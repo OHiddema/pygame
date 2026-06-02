@@ -8,18 +8,16 @@ from models import Position
 # track if we've already warned about missing images
 warned_missing_images = set()
 
-
-# loader function that tries to load and scale the image
 def _load_and_scale_image(path, field_size) -> pygame.Surface:
     path = Path(__file__).resolve().parent / "assets" / path
     if not path.exists():
         raise FileNotFoundError(f"Image file not found: {path}")
     image = pygame.image.load(path).convert_alpha()
-    w, h = image.get_size()
-    scale = min(field_size / w, field_size / h)
-    new_w = int(w * scale)
-    new_h = int(h * scale)
-    return pygame.transform.scale(image, (new_w, new_h))
+    width, height = image.get_size()
+    scale = min(field_size / width, field_size / height)
+    new_width = int(width * scale)
+    new_height = int(height * scale)
+    return pygame.transform.scale(image, (new_width, new_height))
 
 
 def _make_image(filename: str, fallback_color: tuple[int, int, int], field_size: int = CELL_SIZE) -> pygame.Surface: # fmt: skip
@@ -45,12 +43,11 @@ class Entity:
     def pos(self):
         return self._pos
     
-    # This method shall only be used bij class Board !!!
+    # This method shall only be used by class Board !!!
     def _set_pos(self, pos: Position):
         self._pos = pos
 
-    # draw_CC stands for: draw Centred in Cell
-    def draw_centered_in_grid(self, screen):
+    def draw_centered_in_cell(self, screen):
         x = self._pos.x * CELL_SIZE + (CELL_SIZE - self.image.get_width()) // 2
         y = self._pos.y * CELL_SIZE + (CELL_SIZE - self.image.get_height()) // 2
         screen.blit(self.image, (x, y))
@@ -81,7 +78,7 @@ class Monster(Entity):
         self.next_move_time = 0.0
 
     def determine_monster_move(self, legal_deltas: list[tuple[int, int]], robot_pos: Position): # fmt: skip
-        if not legal_deltas:  # an empty list evaluates to False
+        if not legal_deltas:
             return
 
         # Chance of making a smart move, instead of a totally random move
@@ -94,4 +91,4 @@ class Monster(Entity):
         else:
             new_pos = self._pos + random.choice(legal_deltas)
 
-        return new_pos  # GameState will execute the move!
+        return new_pos
