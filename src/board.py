@@ -51,7 +51,7 @@ class Board:
 
         return legal
 
-    def occupant_at(self, pos) -> Entity | None:
+    def occupant_at(self, pos: Position) -> Entity | None:
         return self._occupied_cells.get(pos)
 
     def place_entities_on_grid(self, entities: list[Entity]):
@@ -66,7 +66,7 @@ class Board:
     def move_robot(self, entity: Entity, new_pos: Position):
         entity._set_pos(new_pos)
 
-    def move_monster(self, monster, robot_pos):
+    def move_monster(self, monster: Monster, robot_pos: Position):
         legal_moves = self._get_legal_monster_moves(monster)
         new_pos = monster.determine_monster_move(legal_moves, robot_pos)
         if not new_pos:

@@ -8,8 +8,8 @@ from models import Position
 # track if we've already warned about missing images
 warned_missing_images = set()
 
-def _load_and_scale_image(path, field_size) -> pygame.Surface:
-    path = Path(__file__).resolve().parent / "assets" / path
+def _load_and_scale_image(filename: str, field_size: int) -> pygame.Surface:
+    path = Path(__file__).resolve().parent / "assets" / filename
     if not path.exists():
         raise FileNotFoundError(f"Image file not found: {path}")
     image = pygame.image.load(path).convert_alpha()
@@ -47,7 +47,7 @@ class Entity:
     def _set_pos(self, pos: Position):
         self._pos = pos
 
-    def draw_centered_in_cell(self, screen):
+    def draw_centered_in_cell(self, screen: pygame.Surface):
         x = self._pos.x * CELL_SIZE + (CELL_SIZE - self.image.get_width()) // 2
         y = self._pos.y * CELL_SIZE + (CELL_SIZE - self.image.get_height()) // 2
         screen.blit(self.image, (x, y))
