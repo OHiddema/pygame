@@ -9,13 +9,7 @@ from phase import Phase
 class GameState:
     """
     Represents the central governor of the game
-
-    Handles:
-    - score
-    - phases
-    - rounds
-    - pause phases
-    - round progression.
+    Handles score, phases, rounds and pauses
     """
 
     def __init__(self, screen: pygame.Surface):
@@ -26,9 +20,6 @@ class GameState:
         self.pause_time_after_coin_catch = PAUSE_TIME
         self.pause_toggle_interval = PAUSE_TOGGLE_INTERVAL
         self._reset_game()
-
-    def _get_all_entities(self) -> list[Entity]:
-        return [self.robot, *self._monsters, *self._coins]
 
     def _reset_game(self):
         self.round = 1
@@ -43,25 +34,6 @@ class GameState:
         self.next_pause_toggle_time = 0.0
         self.board.place_entities_on_grid(self._get_all_entities())
 
-    def handle_event(self, event: pygame.Event):
-        if event.type != pygame.KEYDOWN:
-            return
-
-        if self.phase is Phase.MONSTER:
-            if event.key == pygame.K_r:
-                self._reset_game()
-            return
-
-        if self.phase in (Phase.READY, Phase.PLAYING,):  # fmt: skip
-            if event.key == pygame.K_LEFT:
-                self._attempt_robot_move((-1, 0))
-            elif event.key == pygame.K_RIGHT:
-                self._attempt_robot_move((1, 0))
-            elif event.key == pygame.K_UP:
-                self._attempt_robot_move((0, -1))
-            elif event.key == pygame.K_DOWN:
-                self._attempt_robot_move((0, 1))
-
     def _setup_next_round(self):
         self.round += 1
         self._monsters.clear()
@@ -72,6 +44,21 @@ class GameState:
         self._monsters = [Monster() for _ in range(number)]
         self._coins = [Coin() for _ in range(number)]
         self.board.place_entities_on_grid(self._get_all_entities())
+
+    def _get_all_entities(self) -> list[Entity]:
+        return [self.robot, *self._monsters, *self._coins]
+
+    def handle_event(self, event: pygame.Event):
+        if event.type != pygame.KEYDOWN:
+            return
+
+        if self.phase is Phase.MONSTER:
+            if event.key == pygame.K_r:
+                self._reset_game()
+            return
+
+        if self.phase in (Phase.READY, Phase.PLAYING,):  # fmt: skip
+            self.handle_arrow_keys(event)
 
     def update(self):
         if self.phase in (Phase.COIN, Phase.MONSTER):
@@ -110,6 +97,10 @@ class GameState:
             pause_toggle=self.pause_toggle,
         )
 
+    # --------------------
+    # ↓ monster handling ↓
+    # --------------------
+
     def _resync_monsters(self):
         # Called exactly when the robot makes its first move.
         # Sets next_move_time for all monsters to be staggered starting from NOW.
@@ -134,6 +125,48 @@ class GameState:
             # Schedule next move relative to NOW
             monster.next_move_time = now + self.monster_move_delay
 
+    def _check_monster_ran_into_robot(self, monster: Monster):
+        if self.robot.pos == monster.pos:
+            self._activate_monster_phase(monster)
+
+    def _check_robot_ran_into_monster(self, robot: Robot):
+        occupant = self.board.occupant_at(robot.pos)
+        if isinstance(occupant, Monster):
+            self._activate_monster_phase(occupant)
+
+    def _activate_monster_phase(self, monster: Monster):
+        self.phase = Phase.MONSTER
+        self.collision_monster = monster
+
+    # --------------------
+    # ↓ robot handling ↓
+    # --------------------
+
+    def handle_arrow_keys(self, event: pygame.Event):
+            if event.key == pygame.K_LEFT:
+                self._attempt_robot_move((-1, 0))
+            elif event.key == pygame.K_RIGHT:
+                self._attempt_robot_move((1, 0))
+            elif event.key == pygame.K_UP:
+                self._attempt_robot_move((0, -1))
+            elif event.key == pygame.K_DOWN:
+                self._attempt_robot_move((0, 1))
+
+    def _attempt_robot_move(self, delta: tuple[int, int]):
+        candidate = self.robot.pos + delta
+        if not self.board.is_within_bounds(candidate):
+            return
+        self.board.move_robot(self.robot, candidate)
+        # robot makes first move (in new round)
+        if self.phase is not Phase.PLAYING:
+            self.phase = Phase.PLAYING
+            self._resync_monsters()
+        self._check_robot_ran_into_monster(self.robot)
+
+    # --------------------
+    # ↓ coin handling ↓
+    # --------------------
+
     def _get_collided_coin(self) -> Coin | None:
         for coin in self._coins:
             if self.robot.pos == coin.pos:
@@ -154,27 +187,3 @@ class GameState:
     def _remove_coin(self, coin: Coin) -> None:
         self.board.remove_entity(coin)
         self._coins.remove(coin)
-
-    def _check_monster_ran_into_robot(self, monster: Monster):
-        if self.robot.pos == monster.pos:
-            self._activate_monster_phase(monster)
-
-    def _check_robot_ran_into_monster(self, robot: Robot):
-        occupant = self.board.occupant_at(robot.pos)
-        if isinstance(occupant, Monster):
-            self._activate_monster_phase(occupant)
-
-    def _activate_monster_phase(self, monster: Monster):
-        self.phase = Phase.MONSTER
-        self.collision_monster = monster
-
-    def _attempt_robot_move(self, delta: tuple[int, int]):
-        candidate = self.robot.pos + delta
-        if not self.board.is_within_bounds(candidate):
-            return
-        self.board.move_robot(self.robot, candidate)
-        # robot makes first move (in new round)
-        if self.phase is not Phase.PLAYING:
-            self.phase = Phase.PLAYING
-            self._resync_monsters()
-        self._check_robot_ran_into_monster(self.robot)
