@@ -75,7 +75,7 @@ class GameRenderer:
             case Phase.PLAYING:
                 return STATUS_PLAYING
             case _:
-                raise RuntimeError(f"Unexpected state: {self.phase}")
+                raise RuntimeError(f"Unexpected state: {phase}")
 
     def _draw_centered_text(self, text: str, rect: pygame.Rect):
         text_surface = self.font.render(text, True, COLOR_TEXT)
