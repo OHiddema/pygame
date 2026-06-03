@@ -34,7 +34,7 @@ class GameState:
         self.round = 1
         self.robot = Robot()
         self._monsters: list[Monster] = [Monster()]
-        self._coins: list[Coin] = [Coin()]      
+        self._coins: list[Coin] = [Coin()]
         self.collision_monster = Monster()  # dummy monster, used after robot/monster collision
         self.score = 0
         self.phase = Phase.READY
@@ -46,7 +46,7 @@ class GameState:
     def handle_event(self, event: pygame.Event):
         if event.type != pygame.KEYDOWN:
             return
-        
+
         if self.phase is Phase.MONSTER:
             if event.key == pygame.K_r:
                 self._reset_game()
@@ -125,7 +125,7 @@ class GameState:
             if now >= monster.next_move_time:
                 monsters_to_move.append(monster)
         return monsters_to_move
-    
+
     def _process_monster_moves(self, monsters: list[Monster], now: float) -> None:
         for monster in monsters:
             has_moved = self.board.move_monster(monster, self.robot.pos)
@@ -139,7 +139,7 @@ class GameState:
             if self.robot.pos == coin.pos:
                 return coin
         return None
-    
+
     def _handle_coin_collision(self, coin: Coin, is_last_coin: bool) -> None:
         self.score += 1
         if is_last_coin:

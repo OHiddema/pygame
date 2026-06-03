@@ -8,6 +8,7 @@ from models import Position
 # track if we've already warned about missing images
 warned_missing_images = set()
 
+
 def _load_and_scale_image(filename: str, field_size: int) -> pygame.Surface:
     path = Path(__file__).resolve().parent / "assets" / filename
     if not path.exists():
@@ -42,7 +43,7 @@ class Entity:
     @property
     def pos(self):
         return self._pos
-    
+
     # This method shall only be used by class Board !!!
     def _set_pos(self, pos: Position):
         self._pos = pos

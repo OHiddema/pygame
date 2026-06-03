@@ -82,7 +82,9 @@ class GameRenderer:
         text_rect = text_surface.get_rect(center=rect.center)
         self.screen.blit(text_surface, text_rect)
 
-    def _draw_toggle_pair(self, top_obj: Entity, bottom_obj: Entity, pause_toggle: bool):
+    def _draw_toggle_pair(
+        self, top_obj: Entity, bottom_obj: Entity, pause_toggle: bool
+    ):
         top, bottom = (top_obj, bottom_obj) if pause_toggle else (bottom_obj, top_obj)
         top.draw_centered_in_cell(self.screen)
         bottom.draw_centered_in_cell(self.screen)
