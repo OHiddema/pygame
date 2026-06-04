@@ -48,7 +48,7 @@ class GameState:
     def _get_all_entities(self) -> list[Entity]:
         return [self.robot, *self._monsters, *self._coins]
 
-    def handle_event(self, event: pygame.Event):
+    def handle_event(self, event: pygame.event.Event):
         if event.type != pygame.KEYDOWN:
             return
 
@@ -142,7 +142,7 @@ class GameState:
     # ↓ robot handling ↓
     # --------------------
 
-    def handle_arrow_keys(self, event: pygame.Event):
+    def handle_arrow_keys(self, event: pygame.event.Event):
             if event.key == pygame.K_LEFT:
                 self._attempt_robot_move((-1, 0))
             elif event.key == pygame.K_RIGHT:
